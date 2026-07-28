@@ -7,6 +7,7 @@ import { SceneKeys } from '@game/scene-keys';
 import { BootScene } from '@presentation/scenes/BootScene';
 import { GameOverScene } from '@presentation/scenes/GameOverScene';
 import { GameScene } from '@presentation/scenes/GameScene';
+import { LevelCompleteScene } from '@presentation/scenes/LevelCompleteScene';
 import { MainMenuScene } from '@presentation/scenes/MainMenuScene';
 import { PreloadScene } from '@presentation/scenes/PreloadScene';
 
@@ -16,6 +17,7 @@ export function registerScenes(game: Phaser.Game): void {
   game.scene.add(SceneKeys.MainMenu, MainMenuScene);
   game.scene.add(SceneKeys.Game, GameScene);
   game.scene.add(SceneKeys.GameOver, GameOverScene);
+  game.scene.add(SceneKeys.LevelComplete, LevelCompleteScene);
 }
 
 export function createGame(): Phaser.Game {

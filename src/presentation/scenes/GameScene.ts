@@ -8,7 +8,7 @@ import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
 import { AssetKeys } from '@game/asset-keys';
-import { DEFAULT_LEVEL_ID, PLAYER_ENTITY_ID } from '@game/constants';
+import { DEFAULT_LEVEL_ID, getNextLevelId, PLAYER_ENTITY_ID } from '@game/constants';
 import type { SceneDependencies } from '@game/composition-root';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
@@ -20,6 +20,7 @@ import Phaser from 'phaser';
 const CHECKPOINT_XP_REWARD = 10;
 const RESPAWN_FADE_OUT_MS = 200;
 const RESPAWN_FADE_IN_MS = 300;
+const LEVEL_COMPLETE_FADE_OUT_MS = 200;
 
 function createInputSnapshot(inputPort: IInputPort): InputSnapshot {
   let horizontalAxis: -1 | 0 | 1 = 0;
@@ -51,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private activatedCheckpointIds = new Set<string>();
   private keyEsc!: Phaser.Input.Keyboard.Key;
   private isRespawning = false;
+  private isCompleting = false;
 
   constructor() {
     super({ key: SceneKeys.Game });
@@ -76,7 +78,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.isRespawning || !this.playerSprite || !this.groundLayer) {
+    if (this.isRespawning || this.isCompleting || !this.playerSprite || !this.groundLayer) {
       return;
     }
 
@@ -116,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     this.activatedCheckpointIds = new Set();
     this.deps.healthPort.reset();
     this.isRespawning = false;
+    this.isCompleting = false;
   }
 
   private bindSceneInput(): void {
@@ -304,7 +307,7 @@ export class GameScene extends Phaser.Scene {
 
     for (const exit of this.level.exits) {
       if (overlapsPlayerAabb(x, y, exit.position.x, exit.position.y, exit.width, exit.height)) {
-        this.goToGameOver();
+        this.completeLevel();
         return;
       }
     }
@@ -338,6 +341,24 @@ export class GameScene extends Phaser.Scene {
       camera.fadeIn(RESPAWN_FADE_IN_MS, 0, 0, 0);
       camera.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
         this.isRespawning = false;
+      });
+    });
+  }
+
+  private completeLevel(): void {
+    if (this.isCompleting) {
+      return;
+    }
+
+    this.isCompleting = true;
+    const camera = this.cameras.main;
+    const nextLevelId = getNextLevelId(this.levelId);
+
+    camera.fadeOut(LEVEL_COMPLETE_FADE_OUT_MS, 0, 0, 0);
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start(SceneKeys.LevelComplete, {
+        levelId: this.levelId,
+        nextLevelId,
       });
     });
   }

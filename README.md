@@ -104,7 +104,21 @@ MVP фокусируется на **ощущении игры**, а не на п
 | Прыжок | Space |
 | Game Over (отладка) | Esc |
 | Restart (на экране Game Over) | R / Enter |
+| Retry (на экране Level Complete) | R |
+| Next Level (на экране Level Complete, если есть следующий уровень) | N / Enter |
 | Main Menu | M |
+
+## Game flow
+
+```
+Main Menu → Game → Level Complete (победа: выход level_exit)
+                 → Game Over (смерть: hazard / Esc)
+```
+
+- **Победа:** overlap с `level_exit` → fade-out → экран **Level Complete** (зелёный). Доступны Retry (R), Main Menu (M), Next Level (N/Enter — только если в `LEVEL_PROGRESSION` есть следующий уровень).
+- **Поражение:** смерть от hazard или Esc (отладка) → экран **Game Over** (красный). Restart (R/Enter) или Main Menu (M).
+
+Порядок уровней задаётся в `src/game/constants.ts` (`LEVEL_PROGRESSION`).
 
 ## Tiled workflow
 
