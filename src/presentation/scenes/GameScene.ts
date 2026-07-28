@@ -1,6 +1,8 @@
 import type { InputSnapshot } from '@application/use-cases/InputSnapshot';
+import type { AddExperience } from '@application/use-cases/AddExperience';
 import type { IInputPort } from '@application/ports/IInputPort';
 import type { LevelDefinition } from '@domain/entities/LevelDefinition';
+import { HAZARD_DAMAGE } from '@domain/constants/health';
 import { COYOTE_TIME_MS } from '@domain/constants/movement';
 import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
@@ -15,7 +17,7 @@ import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
 import Phaser from 'phaser';
 
-const HAZARD_INVULNERABILITY_MS = 1000;
+const CHECKPOINT_XP_REWARD = 10;
 const RESPAWN_FADE_OUT_MS = 200;
 const RESPAWN_FADE_IN_MS = 300;
 
@@ -39,6 +41,7 @@ function mapCacheKey(levelId: string): string {
 
 export class GameScene extends Phaser.Scene {
   private deps!: SceneDependencies;
+  private addExperience!: AddExperience;
   private playerState!: PlayerState;
   private playerSprite?: PlayerSprite;
   private levelId = DEFAULT_LEVEL_ID;
@@ -46,7 +49,6 @@ export class GameScene extends Phaser.Scene {
   private groundLayer?: Phaser.Tilemaps.TilemapLayer;
   private respawnPosition!: Vector2;
   private activatedCheckpointIds = new Set<string>();
-  private hazardInvulnerabilityRemainingMs = 0;
   private keyEsc!: Phaser.Input.Keyboard.Key;
   private isRespawning = false;
 
@@ -57,6 +59,7 @@ export class GameScene extends Phaser.Scene {
   init(data: { levelId?: string }): void {
     const appDependencies = getAppDependenciesFromRegistry(this);
     this.deps = appDependencies.createSceneDependencies(this);
+    this.addExperience = appDependencies.addExperience;
     this.levelId = data.levelId ?? DEFAULT_LEVEL_ID;
   }
 
@@ -82,12 +85,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (this.hazardInvulnerabilityRemainingMs > 0) {
-      this.hazardInvulnerabilityRemainingMs = Math.max(
-        0,
-        this.hazardInvulnerabilityRemainingMs - delta,
-      );
-    }
+    this.deps.healthPort.tick(delta);
 
     const previousPosition = this.playerState.position;
     const wasGrounded = this.playerState.isGrounded;
@@ -116,7 +114,7 @@ export class GameScene extends Phaser.Scene {
     this.playerSprite = undefined;
     this.groundLayer = undefined;
     this.activatedCheckpointIds = new Set();
-    this.hazardInvulnerabilityRemainingMs = 0;
+    this.deps.healthPort.reset();
     this.isRespawning = false;
   }
 
@@ -266,12 +264,12 @@ export class GameScene extends Phaser.Scene {
   private handleLevelInteractions(): void {
     const { x, y } = this.playerState.position;
 
-    if (this.hazardInvulnerabilityRemainingMs === 0) {
+    if (!this.deps.healthPort.isInvulnerable()) {
       for (const hazard of this.level.hazards) {
         if (
           overlapsPlayerAabb(x, y, hazard.position.x, hazard.position.y, hazard.width, hazard.height)
         ) {
-          this.respawnPlayer();
+          this.handleHazardDamage();
           return;
         }
       }
@@ -300,6 +298,7 @@ export class GameScene extends Phaser.Scene {
             checkpoint.position.y + checkpoint.height,
           ),
         );
+        this.addExperience.execute(CHECKPOINT_XP_REWARD);
       }
     }
 
@@ -309,6 +308,17 @@ export class GameScene extends Phaser.Scene {
         return;
       }
     }
+  }
+
+  private handleHazardDamage(): void {
+    const result = this.deps.applyDamage.execute(HAZARD_DAMAGE);
+
+    if (!result.survived) {
+      this.goToGameOver();
+      return;
+    }
+
+    this.respawnPlayer();
   }
 
   private respawnPlayer(): void {
@@ -324,7 +334,6 @@ export class GameScene extends Phaser.Scene {
       this.spawnPlayer(this.respawnPosition);
       this.setupCameraFollow();
       this.deps.cameraPort.reset();
-      this.hazardInvulnerabilityRemainingMs = HAZARD_INVULNERABILITY_MS;
 
       camera.fadeIn(RESPAWN_FADE_IN_MS, 0, 0, 0);
       camera.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {

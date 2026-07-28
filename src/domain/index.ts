@@ -14,8 +14,26 @@ export {
   JUMP_VELOCITY,
   PLAYER_SPEED,
 } from './constants/movement';
+export { HAZARD_DAMAGE, INVULNERABILITY_MS, MAX_HP } from './constants/health';
+export { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SETTINGS_VERSION } from './constants/settings';
+export {
+  INITIAL_EXPERIENCE,
+  INITIAL_LEVEL,
+  LEVEL_UNLOCKS,
+  XP_PER_LEVEL_MULTIPLIER,
+} from './constants/progression';
+export { MAX_INVENTORY_SLOTS, MAX_STACK_SIZE } from './constants/inventory';
 export { MovementRules, DEFAULT_MOVEMENT_CONFIG } from './services/MovementRules';
 export type { MovementConfig } from './services/MovementRules';
+export { HealthRules } from './services/HealthRules';
+export { SettingsRules } from './services/SettingsRules';
+export { ProgressionRules } from './services/ProgressionRules';
+export { InventoryRules } from './services/InventoryRules';
 export { PlayerState } from './value-objects/PlayerState';
+export { HealthState } from './value-objects/HealthState';
+export { ProgressionState } from './value-objects/ProgressionState';
+export { InventoryState } from './value-objects/InventoryState';
 export { Vector2 } from './value-objects/Vector2';
 export { Velocity } from './value-objects/Velocity';
+export type { GameSettings, GameSettingsPatch } from './types/GameSettings';
+export type { InventoryItem } from './entities/InventoryItem';

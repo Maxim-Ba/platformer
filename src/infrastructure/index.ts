@@ -1,6 +1,10 @@
 export { PlaceholderInputAdapter } from './adapters/PlaceholderInputAdapter';
 export { PlaceholderPhysicsAdapter } from './adapters/PlaceholderPhysicsAdapter';
 export { PlaceholderLevelRepository } from './adapters/PlaceholderLevelRepository';
+export { InMemoryHealthAdapter } from './adapters/InMemoryHealthAdapter';
+export { LocalStorageSettingsAdapter } from './adapters/LocalStorageSettingsAdapter';
+export { InMemoryProgressionAdapter } from './adapters/InMemoryProgressionAdapter';
+export { InMemoryInventoryAdapter } from './adapters/InMemoryInventoryAdapter';
 export { LevelCollisionResolver } from './phaser/LevelCollisionResolver';
 export { TiledLevelRepository } from './tiled/TiledLevelRepository';
 export { PhaserInputAdapter } from './phaser/PhaserInputAdapter';
