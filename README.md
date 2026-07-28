@@ -37,6 +37,12 @@ npm run build
 npm run preview
 ```
 
+## Test
+
+```bash
+npm test
+```
+
 ## Lint
 
 ```bash
@@ -76,6 +82,46 @@ Path aliases (для будущих слоёв Clean Architecture):
 - 2D platformer, тёмная фэнтези-атмосфера, точное движение и exploration.
 - Pet-проект для изучения workflow и границ технологий.
 - **Non-goals**: multiplayer, procedural generation, коммерческий паритет с Blasphemous, custom physics engine.
+
+### MVP scope (Blasphemous-inspired, упрощённо)
+
+MVP фокусируется на **ощущении игры**, а не на полном клоне Blasphemous:
+
+| В MVP | Вне MVP (позже) |
+|-------|-----------------|
+| Движение и прыжок | Melee combat |
+| Hazard damage + respawn на checkpoint | Боссы и сложный AI врагов |
+| Один Tiled-уровень от spawn до exit | Несколько уровней, HUD жизней |
+| Camera follow, fade при смерти | Аудио, полноценные анимации |
+
+**Успех foundation:** рабочий dev pipeline (`npm run dev`), разделение слоёв Clean Architecture, хотя бы один unit-тест доменного правила (`npm test`), один Tiled-уровень загружается в runtime.
+
+## Controls
+
+| Действие | Клавиши |
+|----------|---------|
+| Движение | A/D или стрелки |
+| Прыжок | Space |
+| Game Over (отладка) | Esc |
+| Restart (на экране Game Over) | R / Enter |
+| Main Menu | M |
+
+## Tiled workflow
+
+Исходники карт лежат в `tiled/`, runtime-экспорт — в `public/assets/maps/`.
+
+1. Откройте проект `tiled/platformer.tiled-project` в [Tiled Map Editor](https://www.mapeditor.org/).
+2. Редактируйте `tiled/level-01.tmx` (слои `ground`, `decor`, object layer `objects`).
+3. **Object types** на слое `objects` (обязательные для парсера):
+   - `player_spawn` — ровно один объект старта
+   - `checkpoint` — точки респавна
+   - `hazard` — зоны урона
+   - `level_exit` — выход с уровня
+4. Экспорт: **File → Export As…** → JSON → сохранить как `public/assets/maps/level-01.json`.
+5. Тайлсет: PNG в `public/assets/tilesets/platformer-tiles.png` (источник — `tiled/tilesets/`).
+6. Проверка: `npm run dev` → Main Menu → уровень загружается из `assets/maps/level-01.json`.
+
+При добавлении нового уровня: экспортируйте `level-02.json` и передайте `levelId` в `GameScene` (см. `DEFAULT_LEVEL_ID` в `src/game/constants.ts`).
 
 ## Next steps
 

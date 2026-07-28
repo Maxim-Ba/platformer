@@ -16,6 +16,8 @@ import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
 import Phaser from 'phaser';
 
 const HAZARD_INVULNERABILITY_MS = 1000;
+const RESPAWN_FADE_OUT_MS = 200;
+const RESPAWN_FADE_IN_MS = 300;
 
 function createInputSnapshot(inputPort: IInputPort): InputSnapshot {
   let horizontalAxis: -1 | 0 | 1 = 0;
@@ -46,11 +48,7 @@ export class GameScene extends Phaser.Scene {
   private activatedCheckpointIds = new Set<string>();
   private hazardInvulnerabilityRemainingMs = 0;
   private keyEsc!: Phaser.Input.Keyboard.Key;
-  private keyR!: Phaser.Input.Keyboard.Key;
-  private keyM!: Phaser.Input.Keyboard.Key;
-  private keyEnter!: Phaser.Input.Keyboard.Key;
-  private isGameOver = false;
-  private gameOverOverlay?: Phaser.GameObjects.Container;
+  private isRespawning = false;
 
   constructor() {
     super({ key: SceneKeys.Game });
@@ -75,17 +73,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.isGameOver) {
-      this.handleGameOverInput();
-      return;
-    }
-
-    if (!this.playerSprite || !this.groundLayer) {
+    if (this.isRespawning || !this.playerSprite || !this.groundLayer) {
       return;
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
-      this.showGameOver();
+      this.goToGameOver();
       return;
     }
 
@@ -123,9 +116,7 @@ export class GameScene extends Phaser.Scene {
     this.groundLayer = undefined;
     this.activatedCheckpointIds = new Set();
     this.hazardInvulnerabilityRemainingMs = 0;
-    this.isGameOver = false;
-    this.gameOverOverlay?.destroy();
-    this.gameOverOverlay = undefined;
+    this.isRespawning = false;
   }
 
   private bindSceneInput(): void {
@@ -135,9 +126,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.keyEsc = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    this.keyR = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-    this.keyM = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
-    this.keyEnter = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
   }
 
   private focusCanvas(): void {
@@ -149,6 +137,7 @@ export class GameScene extends Phaser.Scene {
     this.deps.physicsPort.setGravity(0);
     this.cameras.main.setBackgroundColor('#1e1b4b');
     this.cameras.main.roundPixels = true;
+    this.cameras.main.resetFX();
 
     const cacheKey = mapCacheKey(this.levelId);
     const cachedMap = this.cache.tilemap.get(cacheKey);
@@ -183,6 +172,7 @@ export class GameScene extends Phaser.Scene {
 
     this.renderLevelObjects();
     this.spawnPlayer(spawnPosition);
+    this.setupCameraFollow();
 
     this.add
       .text(24, 24, 'A/D or arrows — move, Space — jump, Esc — game over', {
@@ -256,6 +246,16 @@ export class GameScene extends Phaser.Scene {
     this.deps.physicsPort.registerEntity(PLAYER_ENTITY_ID, this.playerSprite.sprite);
   }
 
+  private setupCameraFollow(): void {
+    if (!this.playerSprite) {
+      return;
+    }
+
+    const { width, height } = this.level.bounds;
+    this.cameras.main.setBounds(0, 0, width, height);
+    this.cameras.main.startFollow(this.playerSprite.sprite, true, 0.12, 0.12);
+  }
+
   private handleLevelInteractions(): void {
     const { x, y } = this.playerState.position;
 
@@ -298,60 +298,34 @@ export class GameScene extends Phaser.Scene {
 
     for (const exit of this.level.exits) {
       if (overlapsPlayerAabb(x, y, exit.position.x, exit.position.y, exit.width, exit.height)) {
-        this.showGameOver();
+        this.goToGameOver();
         return;
       }
     }
   }
 
   private respawnPlayer(): void {
-    this.spawnPlayer(this.respawnPosition);
-    this.hazardInvulnerabilityRemainingMs = HAZARD_INVULNERABILITY_MS;
-  }
-
-  private showGameOver(): void {
-    if (this.isGameOver) {
+    if (this.isRespawning) {
       return;
     }
 
-    this.isGameOver = true;
-    this.focusCanvas();
+    this.isRespawning = true;
+    const camera = this.cameras.main;
 
-    const { width, height } = this.cameras.main;
-    const overlay = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
+    camera.fadeOut(RESPAWN_FADE_OUT_MS, 0, 0, 0);
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.spawnPlayer(this.respawnPosition);
+      this.setupCameraFollow();
+      this.hazardInvulnerabilityRemainingMs = HAZARD_INVULNERABILITY_MS;
 
-    const backdrop = this.add
-      .rectangle(width / 2, height / 2, width, height, 0x450a0a, 0.92)
-      .setScrollFactor(0);
-    const title = this.add
-      .text(width / 2, height / 2 - 60, 'Game Over', {
-        color: '#fecaca',
-        fontFamily: 'monospace',
-        fontSize: '56px',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-    const hint = this.add
-      .text(width / 2, height / 2 + 20, 'R / Enter — Restart    M — Main Menu', {
-        color: '#fca5a5',
-        fontFamily: 'monospace',
-        fontSize: '24px',
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-
-    overlay.add([backdrop, title, hint]);
-    this.gameOverOverlay = overlay;
+      camera.fadeIn(RESPAWN_FADE_IN_MS, 0, 0, 0);
+      camera.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+        this.isRespawning = false;
+      });
+    });
   }
 
-  private handleGameOverInput(): void {
-    if (Phaser.Input.Keyboard.JustDown(this.keyR) || Phaser.Input.Keyboard.JustDown(this.keyEnter)) {
-      this.scene.restart({ levelId: this.levelId });
-      return;
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.keyM)) {
-      this.scene.start(SceneKeys.MainMenu);
-    }
+  private goToGameOver(): void {
+    this.scene.start(SceneKeys.GameOver);
   }
 }
