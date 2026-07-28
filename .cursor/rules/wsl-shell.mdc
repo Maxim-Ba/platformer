@@ -1,0 +1,34 @@
+---
+description: Все shell-команды агента выполняются через WSL
+alwaysApply: true
+---
+
+# Shell через WSL
+
+Проект разрабатывается в WSL. Агент **всегда** выполняет терминальные команды через WSL, не через PowerShell/CMD Windows.
+
+## Как запускать
+
+- Рабочая директория в WSL: `/mnt/u/projects/games/platformer`
+- Обернуть команду в WSL, например:
+
+```bash
+wsl bash -lc "cd /mnt/u/projects/games/platformer && npm run dev"
+```
+
+Для многострочных или сложных команд используй `wsl bash -lc` с одной строкой или heredoc внутри bash.
+
+## npm и node_modules
+
+- `npm install`, `npm run dev`, `npm run build`, `npm run lint` — только из WSL.
+- Не смешивать `node_modules` между Windows и WSL: установка и запуск в одной среде.
+- При ошибках нативных биндингов или «битых» optional dependencies в WSL:
+
+```bash
+wsl bash -lc "cd /mnt/u/projects/games/platformer && rm -rf node_modules package-lock.json && npm install"
+```
+
+## Исключения
+
+- Чтение/редактирование файлов — через инструменты редактора (пути Windows `u:\projects\games\platformer` допустимы).
+- Git при необходимости можно вызывать из WSL для единообразия с npm.

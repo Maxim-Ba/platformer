@@ -1,0 +1,25 @@
+schema: spec-driven
+
+context: |
+  Pet-project: 2D dark fantasy platformer inspired by Blasphemous.
+  Stack: TypeScript, Vite, Phaser 3, Tiled.
+  Architecture: Clean Architecture + SOLID. Phaser only in infrastructure/presentation.
+  Resolution: 1920×1080 Full HD, pixelArt true, scale FIT.
+
+  Implementation roadmap (apply in order, archive after each):
+  1. platformer-scaffold
+  2. platformer-architecture
+  3. platformer-player-movement
+  4. platformer-infrastructure-adapters
+  5. platformer-scene-lifecycle
+  6. platformer-level-pipeline
+  7. platformer-mvp-integration
+  8. platformer-quality-gate
+
+rules:
+  proposal:
+    - Reference prerequisite changes from the 8-phase roadmap when applicable
+    - Keep non-goals explicit (no combat in foundation MVP)
+  tasks:
+    - Break tasks into chunks completable in one session
+    - Renumber tasks starting at 1.1 within each change
