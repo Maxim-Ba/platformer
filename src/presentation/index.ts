@@ -1,1 +1,2 @@
-// Scenes, sprites, and UI will be added in later changes.
+export { PlayerSprite } from './entities/PlayerSprite';
+export { GameScene } from './scenes/GameScene';

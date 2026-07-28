@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
 
+import { createAppDependencies } from '@game/composition-root';
+import { GameScene } from '@presentation/scenes/GameScene';
+
+const appDependencies = createAppDependencies();
+
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
@@ -16,6 +21,14 @@ const config: Phaser.Types.Core.GameConfig = {
     },
   },
   pixelArt: true,
+  render: {
+    roundPixels: true,
+  },
+  scene: [],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+game.scene.add('GameScene', GameScene);
+game.scene.start('GameScene', {
+  createSceneDependencies: appDependencies.createSceneDependencies,
+});

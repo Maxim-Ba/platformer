@@ -1,1 +1,7 @@
-export { createAppDependencies, type AppDependencies } from './composition-root';
+export { PLAYER_ENTITY_ID } from './constants';
+export {
+  createAppDependencies,
+  createSceneDependencies,
+  type AppDependencies,
+  type SceneDependencies,
+} from './composition-root';
