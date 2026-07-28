@@ -1,0 +1,46 @@
+{
+    "automappingRulesFile": "",
+    "commands": [],
+    "compatibilityVersion": 1100,
+    "extensionsPath": "extensions",
+    "folders": [
+        "."
+    ],
+    "objectTypes": [
+        {
+            "color": "#55aaff",
+            "drawFill": true,
+            "id": 1,
+            "name": "player_spawn",
+            "type": "object",
+            "useAs": "object"
+        },
+        {
+            "color": "#55ff55",
+            "drawFill": true,
+            "id": 2,
+            "name": "level_exit",
+            "type": "object",
+            "useAs": "object"
+        },
+        {
+            "color": "#ff5555",
+            "drawFill": true,
+            "id": 3,
+            "name": "hazard",
+            "type": "object",
+            "useAs": "object"
+        },
+        {
+            "color": "#ffff55",
+            "drawFill": true,
+            "id": 4,
+            "name": "checkpoint",
+            "type": "object",
+            "useAs": "object"
+        }
+    ],
+    "propertyTypes": [],
+    "properties": [],
+    "version": "1.10.2"
+}

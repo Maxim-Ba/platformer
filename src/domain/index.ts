@@ -1,3 +1,12 @@
+export type {
+  Checkpoint,
+  HazardZone,
+  LevelBounds,
+  LevelDefinition,
+  LevelExit,
+  LevelObject,
+  PlayerSpawn,
+} from './entities/LevelDefinition';
 export {
   COYOTE_TIME_MS,
   GRAVITY,

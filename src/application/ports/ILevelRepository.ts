@@ -1,9 +1,5 @@
-export interface LevelData {
-  id: string;
-  width: number;
-  height: number;
-}
+import type { LevelDefinition } from '@domain/entities/LevelDefinition';
 
 export interface ILevelRepository {
-  load(levelId: string): Promise<LevelData>;
+  load(levelId: string): Promise<LevelDefinition>;
 }

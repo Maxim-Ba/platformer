@@ -1,0 +1,124 @@
+import type {
+  Checkpoint,
+  HazardZone,
+  LevelDefinition,
+  LevelExit,
+  PlayerSpawn,
+} from '@domain/entities/LevelDefinition';
+import { Vector2 } from '@domain/value-objects/Vector2';
+
+import type { ILevelRepository } from '@application/ports/ILevelRepository';
+
+import type { TiledMapJson, TiledObject, TiledObjectGroup } from './TiledTypes';
+
+const OBJECTS_LAYER_NAME = 'objects';
+
+export class TiledLevelRepository implements ILevelRepository {
+  constructor(private readonly basePath = '/assets/maps') {}
+
+  async load(levelId: string): Promise<LevelDefinition> {
+    const response = await fetch(`${this.basePath}/${levelId}.json`);
+    if (!response.ok) {
+      throw new Error(`Failed to load level "${levelId}": ${response.status} ${response.statusText}`);
+    }
+
+    const map = (await response.json()) as TiledMapJson;
+    return this.parseMap(levelId, map);
+  }
+
+  parseMap(levelId: string, map: TiledMapJson): LevelDefinition {
+    const objectsLayer = map.layers.find(
+      (layer): layer is TiledObjectGroup =>
+        layer.type === 'objectgroup' && layer.name === OBJECTS_LAYER_NAME,
+    );
+
+    if (!objectsLayer) {
+      throw new Error(`Level "${levelId}" is missing required object layer "${OBJECTS_LAYER_NAME}"`);
+    }
+
+    const playerSpawn = this.findSingleObject(objectsLayer.objects, 'player_spawn', levelId, (object) =>
+      this.toPlayerSpawn(object),
+    );
+
+    const exits = objectsLayer.objects
+      .filter((object) => object.type === 'level_exit')
+      .map((object) => this.toLevelExit(object));
+
+    const hazards = objectsLayer.objects
+      .filter((object) => object.type === 'hazard')
+      .map((object) => this.toHazardZone(object));
+
+    const checkpoints = objectsLayer.objects
+      .filter((object) => object.type === 'checkpoint')
+      .map((object) => this.toCheckpoint(object));
+
+    return {
+      id: levelId,
+      bounds: {
+        width: map.width * map.tilewidth,
+        height: map.height * map.tileheight,
+        tileWidth: map.tilewidth,
+        tileHeight: map.tileheight,
+      },
+      playerSpawn,
+      exits,
+      hazards,
+      checkpoints,
+    };
+  }
+
+  private findSingleObject<T>(
+    objects: readonly TiledObject[],
+    type: string,
+    levelId: string,
+    mapObject: (object: TiledObject) => T,
+  ): T {
+    const matches = objects.filter((object) => object.type === type);
+    if (matches.length !== 1) {
+      throw new Error(
+        `Level "${levelId}" must contain exactly one "${type}" object, found ${matches.length}`,
+      );
+    }
+
+    return mapObject(matches[0]);
+  }
+
+  private toPlayerSpawn(object: TiledObject): PlayerSpawn {
+    return {
+      kind: 'player_spawn',
+      position: this.objectFeetPosition(object),
+    };
+  }
+
+  private toLevelExit(object: TiledObject): LevelExit {
+    return {
+      kind: 'level_exit',
+      position: new Vector2(object.x, object.y),
+      width: object.width,
+      height: object.height,
+    };
+  }
+
+  private toHazardZone(object: TiledObject): HazardZone {
+    return {
+      kind: 'hazard',
+      position: new Vector2(object.x, object.y),
+      width: object.width,
+      height: object.height,
+    };
+  }
+
+  private toCheckpoint(object: TiledObject): Checkpoint {
+    return {
+      kind: 'checkpoint',
+      id: `checkpoint-${object.id}`,
+      position: new Vector2(object.x, object.y),
+      width: object.width,
+      height: object.height,
+    };
+  }
+
+  private objectFeetPosition(object: TiledObject): Vector2 {
+    return new Vector2(object.x + object.width / 2, object.y + object.height);
+  }
+}

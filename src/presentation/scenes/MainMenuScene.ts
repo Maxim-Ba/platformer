@@ -3,11 +3,15 @@ import { SceneKeys } from '@game/scene-keys';
 import Phaser from 'phaser';
 
 export class MainMenuScene extends Phaser.Scene {
+  private hasStarted = false;
+
   constructor() {
     super({ key: SceneKeys.MainMenu });
   }
 
   create(): void {
+    this.hasStarted = false;
+
     const { width, height } = this.cameras.main;
 
     this.cameras.main.setBackgroundColor('#1e1b4b');
@@ -50,6 +54,11 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private startGame(): void {
+    if (this.hasStarted) {
+      return;
+    }
+
+    this.hasStarted = true;
     this.scene.start(SceneKeys.Game, { levelId: DEFAULT_LEVEL_ID });
   }
 }
