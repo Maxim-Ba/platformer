@@ -1,3 +1,4 @@
+import type { ICameraPort } from '@application/ports/ICameraPort';
 import type { IInputPort } from '@application/ports/IInputPort';
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
 import type { IPhysicsPort } from '@application/ports/IPhysicsPort';
@@ -7,6 +8,7 @@ import { LevelCollisionResolver } from '@infrastructure/phaser/LevelCollisionRes
 import { TiledLevelRepository } from '@infrastructure/tiled/TiledLevelRepository';
 import { PhaserInputAdapter } from '@infrastructure/phaser/PhaserInputAdapter';
 import { PhaserPhysicsAdapter } from '@infrastructure/phaser/PhaserPhysicsAdapter';
+import { PhaserSmoothCameraAdapter } from '@infrastructure/phaser/PhaserSmoothCameraAdapter';
 import type Phaser from 'phaser';
 
 export interface AppDependencies {
@@ -18,6 +20,7 @@ export interface AppDependencies {
 export interface SceneDependencies {
   inputPort: IInputPort;
   physicsPort: IPhysicsPort;
+  cameraPort: ICameraPort;
   updatePlayerMovement: UpdatePlayerMovement;
   loadLevel: LoadLevel;
   levelCollisionResolver: LevelCollisionResolver;
@@ -33,6 +36,7 @@ export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies 
   return {
     inputPort: new PhaserInputAdapter(scene),
     physicsPort: new PhaserPhysicsAdapter(scene),
+    cameraPort: new PhaserSmoothCameraAdapter(scene.cameras.main),
     updatePlayerMovement: new UpdatePlayerMovement(),
     loadLevel: new LoadLevel(levelRepository),
     levelCollisionResolver: new LevelCollisionResolver(),

@@ -109,6 +109,7 @@ export class GameScene extends Phaser.Scene {
 
     this.playerSprite.syncFromState(this.playerState);
     this.deps.physicsPort.syncFromDomain(PLAYER_ENTITY_ID, this.playerState);
+    this.deps.cameraPort.update(delta);
   }
 
   private resetSceneState(): void {
@@ -252,8 +253,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     const { width, height } = this.level.bounds;
-    this.cameras.main.setBounds(0, 0, width, height);
-    this.cameras.main.startFollow(this.playerSprite.sprite, true, 0.12, 0.12);
+    const camera = this.cameras.main;
+
+    this.deps.cameraPort.setViewportSize(camera.width, camera.height);
+    this.deps.cameraPort.setBounds({ x: 0, y: 0, width, height });
+    this.deps.cameraPort.attach(() => ({
+      x: this.playerSprite!.sprite.x,
+      y: this.playerSprite!.sprite.y,
+    }));
   }
 
   private handleLevelInteractions(): void {
@@ -316,6 +323,7 @@ export class GameScene extends Phaser.Scene {
     camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.spawnPlayer(this.respawnPosition);
       this.setupCameraFollow();
+      this.deps.cameraPort.reset();
       this.hazardInvulnerabilityRemainingMs = HAZARD_INVULNERABILITY_MS;
 
       camera.fadeIn(RESPAWN_FADE_IN_MS, 0, 0, 0);
