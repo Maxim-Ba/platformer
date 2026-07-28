@@ -1,30 +1,18 @@
 import type { InputSnapshot } from '@application/use-cases/InputSnapshot';
 import type { IInputPort } from '@application/ports/IInputPort';
+import { AssetKeys } from '@game/asset-keys';
 import { COYOTE_TIME_MS } from '@domain/constants/movement';
 import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
-import { PLAYER_ENTITY_ID } from '@game/constants';
+import { DEFAULT_LEVEL_ID, PLAYER_ENTITY_ID } from '@game/constants';
 import type { SceneDependencies } from '@game/composition-root';
-import { createSceneDependencies } from '@game/composition-root';
+import { getAppDependenciesFromRegistry } from '@game/scene-context';
+import { SceneKeys } from '@game/scene-keys';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import Phaser from 'phaser';
 
-const GROUND_TEXTURE_KEY = 'ground';
-const GROUND_WIDTH = 800;
 const GROUND_HEIGHT = 32;
-
-function ensureGroundTexture(scene: Phaser.Scene): void {
-  if (scene.textures.exists(GROUND_TEXTURE_KEY)) {
-    return;
-  }
-
-  const graphics = scene.make.graphics({ x: 0, y: 0 }, false);
-  graphics.fillStyle(0x78716c, 1);
-  graphics.fillRect(0, 0, GROUND_WIDTH, GROUND_HEIGHT);
-  graphics.generateTexture(GROUND_TEXTURE_KEY, GROUND_WIDTH, GROUND_HEIGHT);
-  graphics.destroy();
-}
 
 function createInputSnapshot(inputPort: IInputPort): InputSnapshot {
   let horizontalAxis: -1 | 0 | 1 = 0;
@@ -45,14 +33,16 @@ export class GameScene extends Phaser.Scene {
   private playerState!: PlayerState;
   private playerSprite!: PlayerSprite;
   private groundSurfaceY = 0;
+  private levelId = DEFAULT_LEVEL_ID;
 
   constructor() {
-    super({ key: 'GameScene' });
+    super({ key: SceneKeys.Game });
   }
 
-  init(data: { createSceneDependencies?: typeof createSceneDependencies }): void {
-    const createDeps = data.createSceneDependencies ?? createSceneDependencies;
-    this.deps = createDeps(this);
+  init(data: { levelId?: string }): void {
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    this.deps = appDependencies.createSceneDependencies(this);
+    this.levelId = data.levelId ?? DEFAULT_LEVEL_ID;
   }
 
   create(): void {
@@ -60,9 +50,8 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#1e1b4b');
     this.cameras.main.roundPixels = true;
 
-    ensureGroundTexture(this);
     const groundCenterY = this.scale.height - 64;
-    const ground = this.add.image(this.scale.width / 2, groundCenterY, GROUND_TEXTURE_KEY);
+    const ground = this.add.image(this.scale.width / 2, groundCenterY, AssetKeys.Ground);
     ground.setDepth(0);
 
     this.groundSurfaceY = groundCenterY - GROUND_HEIGHT / 2;
@@ -80,13 +69,19 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.add
-      .text(24, 24, 'A/D or arrows — move, Space — jump', {
+      .text(24, 24, 'A/D or arrows — move, Space — jump, Esc — game over', {
         color: '#e2e8f0',
         fontFamily: 'monospace',
         fontSize: '20px',
       })
       .setScrollFactor(0)
       .setDepth(10);
+
+    this.input.keyboard?.on('keydown-ESC', () => {
+      this.scene.start(SceneKeys.GameOver);
+    });
+
+    this.registry.set('currentLevelId', this.levelId);
   }
 
   update(_time: number, delta: number): void {

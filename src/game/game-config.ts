@@ -1,0 +1,25 @@
+import Phaser from 'phaser';
+
+export function createGameConfig(): Phaser.Types.Core.GameConfig {
+  return {
+    type: Phaser.AUTO,
+    parent: 'game',
+    width: 1920,
+    height: 1080,
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    physics: {
+      default: 'arcade',
+      arcade: {
+        gravity: { x: 0, y: 0 },
+      },
+    },
+    pixelArt: true,
+    render: {
+      roundPixels: true,
+    },
+    scene: [],
+  };
+}
