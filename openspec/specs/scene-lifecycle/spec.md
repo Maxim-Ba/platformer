@@ -8,7 +8,7 @@ Phaser-сцены и правила переходов: Boot → Preload → Mai
 
 ### Requirement: Core scene set
 
-The game MUST implement Boot, Preload, MainMenu, Game, GameOver, and LevelComplete scenes with documented transition rules.
+The game MUST implement Boot, Preload, MainMenu, Game, GameOver, LevelComplete, Settings, and LoadGame scenes with documented transition rules.
 
 #### Scenario: Boot to Preload transition
 
@@ -22,8 +22,19 @@ The game MUST implement Boot, Preload, MainMenu, Game, GameOver, and LevelComple
 
 #### Scenario: Start game from menu
 
-- **WHEN** player confirms start from MainMenuScene
-- **THEN** GameScene MUST load with the configured first level
+- **WHEN** player selects «Новая игра» from MainMenuScene
+- **THEN** GameScene MUST load with the default first level after `StartNewGame` resets runtime state
+
+#### Scenario: Load game from menu
+
+- **WHEN** player selects a valid save from LoadGameScene
+- **THEN** GameScene MUST start with the saved `levelId` and restored progression/inventory state
+
+#### Scenario: Settings from menu
+
+- **WHEN** player selects «Настройки» from MainMenuScene
+- **THEN** SettingsScene MUST open
+- **AND** pressing Escape MUST return to MainMenuScene
 
 #### Scenario: Game over flow
 
@@ -34,6 +45,30 @@ The game MUST implement Boot, Preload, MainMenu, Game, GameOver, and LevelComple
 
 - **WHEN** player reaches level exit and LevelCompleteScene is shown
 - **THEN** player MUST be able to navigate to next level, retry, or main menu per level-complete-flow rules
+
+#### Scenario: Pause does not trigger game over
+
+- **WHEN** player presses Escape during active GameScene gameplay
+- **THEN** the game MUST show the pause overlay and MUST NOT transition to GameOverScene
+
+### Requirement: In-game pause overlay flow
+
+GameScene MUST support an in-scene pause overlay without leaving the active level session.
+
+#### Scenario: Pause does not destroy GameScene
+
+- **WHEN** player opens the pause menu during gameplay
+- **THEN** GameScene MUST remain active and MUST preserve level state including activated checkpoints and current resources
+
+#### Scenario: Settings launched from pause
+
+- **WHEN** player opens Settings from the pause menu
+- **THEN** SettingsScene MUST be launched on top of paused GameScene and MUST return to paused GameScene on back navigation
+
+#### Scenario: Exit from pause to main menu
+
+- **WHEN** player selects Exit from the pause menu
+- **THEN** the game MUST transition from GameScene to MainMenuScene after saving progress
 
 ### Requirement: Thin presentation scenes
 
@@ -52,6 +87,15 @@ All scenes MUST be registered in a central game bootstrap module with stable str
 
 - **WHEN** a scene transition is requested
 - **THEN** it MUST use registered scene keys defined in one module to avoid string duplication across files
+
+### Requirement: Scene registry for menu scenes
+
+SettingsScene and LoadGameScene MUST be registered in the central game bootstrap module with stable string keys.
+
+#### Scenario: New scene keys
+
+- **WHEN** a transition to Settings or LoadGame is requested
+- **THEN** it MUST use keys defined in `scene-keys.ts`
 
 ### Requirement: Loading feedback
 

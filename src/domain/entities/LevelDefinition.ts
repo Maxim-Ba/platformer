@@ -34,7 +34,14 @@ export interface Checkpoint {
   readonly height: number;
 }
 
-export type LevelObject = PlayerSpawn | LevelExit | HazardZone | Checkpoint;
+export interface EnemySpawn {
+  readonly kind: 'enemy_spawn';
+  readonly id: string;
+  readonly position: Vector2;
+  readonly patrolDistance: number;
+}
+
+export type LevelObject = PlayerSpawn | LevelExit | HazardZone | Checkpoint | EnemySpawn;
 
 export interface LevelDefinition {
   readonly id: string;
@@ -43,4 +50,5 @@ export interface LevelDefinition {
   readonly exits: readonly LevelExit[];
   readonly hazards: readonly HazardZone[];
   readonly checkpoints: readonly Checkpoint[];
+  readonly enemySpawns: readonly EnemySpawn[];
 }

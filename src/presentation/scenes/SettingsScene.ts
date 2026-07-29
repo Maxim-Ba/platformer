@@ -1,14 +1,23 @@
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
-import { SceneKeys } from '@game/scene-keys';
+import type { SettingsSceneData } from '@game/scene-data';
+import { SceneKeys, type SceneKey } from '@game/scene-keys';
 import Phaser from 'phaser';
 
 export class SettingsScene extends Phaser.Scene {
   private selectedRow = 0;
+  private returnScene: SceneKey = SceneKeys.MainMenu;
   private readonly rows = ['master', 'music', 'sfx', 'fullscreen'] as const;
 
   private readonly onWindowKeyDown = (event: KeyboardEvent): void => {
     if (event.code === 'Escape') {
       event.preventDefault();
+
+      if (this.returnScene === SceneKeys.Game) {
+        this.scene.stop();
+        this.scene.resume(SceneKeys.Game);
+        return;
+      }
+
       this.scene.start(SceneKeys.MainMenu);
       return;
     }
@@ -82,6 +91,10 @@ export class SettingsScene extends Phaser.Scene {
 
   constructor() {
     super({ key: SceneKeys.Settings });
+  }
+
+  init(data?: SettingsSceneData): void {
+    this.returnScene = data?.returnScene ?? SceneKeys.MainMenu;
   }
 
   create(): void {

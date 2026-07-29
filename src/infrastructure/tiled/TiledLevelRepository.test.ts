@@ -88,6 +88,47 @@ describe('TiledLevelRepository', () => {
     expect(level.hazards).toHaveLength(1);
     expect(level.checkpoints).toHaveLength(1);
     expect(level.checkpoints[0]?.id).toBe('checkpoint-4');
+    expect(level.enemySpawns).toHaveLength(0);
+  });
+
+  it('parses enemy_spawn with optional patrolDistance', () => {
+    const repository = new TiledLevelRepository();
+    const objectsLayer = sampleMap.layers.find(
+      (layer): layer is Extract<typeof layer, { type: 'objectgroup' }> =>
+        layer.type === 'objectgroup',
+    )!;
+    const mapWithEnemy: TiledMapJson = {
+      ...sampleMap,
+      layers: [
+        {
+          name: 'objects',
+          type: 'objectgroup',
+          objects: [
+            ...objectsLayer.objects,
+            {
+              id: 5,
+              name: 'Patrol Enemy',
+              type: 'enemy_spawn',
+              x: 160,
+              y: 96,
+              width: 32,
+              height: 32,
+              properties: [{ name: 'patrolDistance', type: 'int', value: 80 }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const level = repository.parseMap('level-enemy', mapWithEnemy);
+
+    expect(level.enemySpawns).toHaveLength(1);
+    expect(level.enemySpawns[0]).toEqual({
+      kind: 'enemy_spawn',
+      id: 'enemy-5',
+      position: new Vector2(176, 128),
+      patrolDistance: 80,
+    });
   });
 
   it('throws when player_spawn is missing', () => {

@@ -1,10 +1,12 @@
 import type {
   Checkpoint,
+  EnemySpawn,
   HazardZone,
   LevelDefinition,
   LevelExit,
   PlayerSpawn,
 } from '@domain/entities/LevelDefinition';
+import { ENEMY_DEFAULT_PATROL_DISTANCE } from '@domain/constants/combat';
 import { Vector2 } from '@domain/value-objects/Vector2';
 
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
@@ -52,6 +54,10 @@ export class TiledLevelRepository implements ILevelRepository {
       .filter((object) => object.type === 'checkpoint')
       .map((object) => this.toCheckpoint(object));
 
+    const enemySpawns = objectsLayer.objects
+      .filter((object) => object.type === 'enemy_spawn')
+      .map((object) => this.toEnemySpawn(object));
+
     return {
       id: levelId,
       bounds: {
@@ -64,6 +70,7 @@ export class TiledLevelRepository implements ILevelRepository {
       exits,
       hazards,
       checkpoints,
+      enemySpawns,
     };
   }
 
@@ -116,6 +123,29 @@ export class TiledLevelRepository implements ILevelRepository {
       width: object.width,
       height: object.height,
     };
+  }
+
+  private toEnemySpawn(object: TiledObject): EnemySpawn {
+    return {
+      kind: 'enemy_spawn',
+      id: `enemy-${object.id}`,
+      position: this.objectFeetPosition(object),
+      patrolDistance: this.readNumberProperty(object, 'patrolDistance', ENEMY_DEFAULT_PATROL_DISTANCE),
+    };
+  }
+
+  private readNumberProperty(
+    object: TiledObject,
+    name: string,
+    fallback: number,
+  ): number {
+    const property = object.properties?.find((entry) => entry.name === name);
+
+    if (!property || typeof property.value !== 'number') {
+      return fallback;
+    }
+
+    return property.value;
   }
 
   private objectFeetPosition(object: TiledObject): Vector2 {

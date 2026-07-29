@@ -130,6 +130,24 @@
                  "width":64,
                  "x":1121.33,
                  "y":472
+                },
+                {
+                 "height":32,
+                 "id":5,
+                 "name":"Patrol Enemy",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"patrolDistance",
+                         "type":"int",
+                         "value":120
+                        }],
+                 "rotation":0,
+                 "type":"enemy_spawn",
+                 "visible":true,
+                 "width":32,
+                 "x":288,
+                 "y":512
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -138,7 +156,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":6,
+ "nextobjectid":7,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

@@ -98,3 +98,8 @@ The game MUST continue showing movement/control hints during gameplay as a separ
 
 - **WHEN** control hints are displayed during gameplay
 - **THEN** the hint MUST document character menu tab hotkeys (`I`, `K`, `C`, `U`, `M`)
+
+#### Scenario: Pause hint text
+
+- **WHEN** control hints are displayed during gameplay
+- **THEN** the hint MUST document Escape as opening pause, not as triggering game over

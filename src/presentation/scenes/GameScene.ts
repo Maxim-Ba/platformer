@@ -3,7 +3,10 @@ import type { AddExperience } from '@application/use-cases/AddExperience';
 import type { IInputPort } from '@application/ports/IInputPort';
 import type { LevelDefinition } from '@domain/entities/LevelDefinition';
 import { HAZARD_DAMAGE } from '@domain/constants/health';
+import { ENEMY_KILL_XP } from '@domain/constants/combat';
+import { CombatRules } from '@domain/services/CombatRules';
 import { COYOTE_TIME_MS } from '@domain/constants/movement';
+import { DEFAULT_SAVE_SLOT_ID } from '@domain/constants/save';
 import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
@@ -19,12 +22,17 @@ import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
+import { EnemySprite } from '@presentation/entities/EnemySprite';
 import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
 import { createGameHud, type GameHud } from '@presentation/ui/hud/GameHud';
 import {
   createCharacterMenuOverlay,
   type CharacterMenuOverlay,
 } from '@presentation/ui/CharacterMenuOverlay';
+import {
+  createPauseMenuOverlay,
+  type PauseMenuOverlay,
+} from '@presentation/ui/PauseMenuOverlay';
 import Phaser from 'phaser';
 
 const CHECKPOINT_XP_REWARD = 10;
@@ -67,9 +75,15 @@ export class GameScene extends Phaser.Scene {
   }> = [];
   private isCharacterMenuOpen = false;
   private characterMenuOverlay?: CharacterMenuOverlay;
+  private isPaused = false;
+  private pauseMenuOverlay?: PauseMenuOverlay;
   private isRespawning = false;
   private isCompleting = false;
   private hud?: GameHud;
+  private facingDirection: -1 | 1 = 1;
+  private enemySprites = new Map<string, EnemySprite>();
+  private attackHitboxFeedback?: Phaser.GameObjects.Rectangle;
+  private readonly combatRules = new CombatRules();
 
   constructor() {
     super({ key: SceneKeys.Game });
@@ -91,11 +105,20 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.resetSceneState();
     this.bindSceneInput();
+    this.bindPauseResume();
     this.initializeLevel();
     this.focusCanvas();
   }
 
   update(_time: number, delta: number): void {
+    if (this.isPaused) {
+      if (Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
+        this.closePauseMenu();
+      }
+
+      return;
+    }
+
     if (this.handleCharacterMenuInput()) {
       return;
     }
@@ -105,7 +128,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
-      this.goToGameOver();
+      this.openPauseMenu();
       return;
     }
 
@@ -129,6 +152,9 @@ export class GameScene extends Phaser.Scene {
 
     this.handleLevelInteractions();
 
+    this.updateFacingDirection();
+    this.handleCombat(delta);
+
     this.playerSprite.syncFromState(this.playerState);
     this.deps.physicsPort.syncFromDomain(PLAYER_ENTITY_ID, this.playerState);
     this.deps.cameraPort.update(delta);
@@ -136,6 +162,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resetSceneState(): void {
+    this.destroyPauseMenu();
     this.destroyCharacterMenu();
     this.destroyHud();
     this.playerSprite = undefined;
@@ -144,8 +171,14 @@ export class GameScene extends Phaser.Scene {
     this.deps.healthPort.reset();
     this.deps.manaPort.reset();
     this.deps.energyPort.reset();
+    this.deps.combatPort.reset();
+    this.deps.enemyPort.reset();
+    this.destroyEnemySprites();
+    this.destroyAttackFeedback();
+    this.facingDirection = 1;
     this.isRespawning = false;
     this.isCompleting = false;
+    this.isPaused = false;
   }
 
   private destroyHud(): void {
@@ -164,6 +197,27 @@ export class GameScene extends Phaser.Scene {
       tab,
       key: keyboard.addKey(tab.keyCode),
     }));
+  }
+
+  private bindPauseResume(): void {
+    const onResumeFromSettings = (): void => {
+      if (!this.isPaused) {
+        return;
+      }
+
+      if (!this.pauseMenuOverlay) {
+        this.pauseMenuOverlay = createPauseMenuOverlay(this, {
+          onSettings: () => this.openSettingsFromPause(),
+          onCheckpoint: () => this.restartFromCheckpoint(),
+          onExit: () => this.exitToMainMenu(),
+        });
+      }
+    };
+
+    this.events.on('resume', onResumeFromSettings);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off('resume', onResumeFromSettings);
+    });
   }
 
   private focusCanvas(): void {
@@ -211,6 +265,7 @@ export class GameScene extends Phaser.Scene {
     this.respawnPosition = spawnPosition;
 
     this.renderLevelObjects();
+    this.spawnEnemies();
     this.spawnPlayer(spawnPosition);
     this.setupCameraFollow();
     this.createHud();
@@ -231,11 +286,12 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.destroyHud();
       this.destroyCharacterMenu();
+      this.destroyPauseMenu();
     });
   }
 
   private handleCharacterMenuInput(): boolean {
-    if (this.isRespawning || this.isCompleting) {
+    if (this.isPaused || this.isRespawning || this.isCompleting) {
       return false;
     }
 
@@ -290,6 +346,174 @@ export class GameScene extends Phaser.Scene {
     this.characterMenuOverlay?.destroy();
     this.characterMenuOverlay = undefined;
     this.isCharacterMenuOpen = false;
+  }
+
+  private openPauseMenu(): void {
+    if (this.isRespawning || this.isCompleting || this.isPaused) {
+      return;
+    }
+
+    this.closeCharacterMenu();
+
+    this.pauseMenuOverlay = createPauseMenuOverlay(this, {
+      onSettings: () => this.openSettingsFromPause(),
+      onCheckpoint: () => this.restartFromCheckpoint(),
+      onExit: () => this.exitToMainMenu(),
+    });
+    this.isPaused = true;
+  }
+
+  private closePauseMenu(): void {
+    this.isPaused = false;
+    this.destroyPauseMenu();
+  }
+
+  private destroyPauseMenu(): void {
+    this.pauseMenuOverlay?.destroy();
+    this.pauseMenuOverlay = undefined;
+  }
+
+  private openSettingsFromPause(): void {
+    this.scene.launch(SceneKeys.Settings, { returnScene: SceneKeys.Game });
+    this.scene.pause();
+  }
+
+  private restartFromCheckpoint(): void {
+    this.closePauseMenu();
+    this.respawnPlayer();
+  }
+
+  private exitToMainMenu(): void {
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    appDependencies.saveGame.execute({ slotId: DEFAULT_SAVE_SLOT_ID, levelId: this.levelId });
+    this.scene.start(SceneKeys.MainMenu);
+  }
+
+  private spawnEnemies(): void {
+    this.deps.enemyPort.spawnEnemies(this.level.enemySpawns);
+
+    for (const enemy of this.deps.enemyPort.getEnemies()) {
+      const sprite = new EnemySprite(this, enemy.position.x, enemy.position.y);
+      this.enemySprites.set(enemy.id, sprite);
+    }
+  }
+
+  private updateFacingDirection(): void {
+    if (this.playerState.velocity.x < 0) {
+      this.facingDirection = -1;
+    } else if (this.playerState.velocity.x > 0) {
+      this.facingDirection = 1;
+    }
+  }
+
+  private handleCombat(delta: number): void {
+    const attackResult = this.deps.executeMeleeAttack.execute({
+      playerPosition: this.playerState.position,
+      facingDirection: this.facingDirection,
+      attackPressed: this.deps.inputPort.isAttackPressed(),
+      deltaMs: delta,
+    });
+
+    for (const enemyId of attackResult.enemiesKilled) {
+      this.addExperience.execute(ENEMY_KILL_XP);
+      this.destroyEnemySprite(enemyId);
+    }
+
+    this.syncEnemySprites();
+    this.updateAttackFeedback();
+
+    const enemyUpdateResult = this.deps.updateEnemies.execute({
+      playerPosition: this.playerState.position,
+      deltaMs: delta,
+    });
+
+    if (enemyUpdateResult.contactDamageApplied) {
+      if (!enemyUpdateResult.survived) {
+        this.goToGameOver();
+        return;
+      }
+
+      this.respawnPlayer();
+      return;
+    }
+  }
+
+  private syncEnemySprites(): void {
+    for (const enemy of this.deps.enemyPort.getEnemies()) {
+      const sprite = this.enemySprites.get(enemy.id);
+
+      if (!sprite) {
+        const created = new EnemySprite(this, enemy.position.x, enemy.position.y);
+        this.enemySprites.set(enemy.id, created);
+        created.syncFromState(enemy);
+        continue;
+      }
+
+      sprite.syncFromState(enemy);
+    }
+  }
+
+  private updateAttackFeedback(): void {
+    const attackState = this.deps.combatPort.getAttackState();
+
+    if (!this.combatRules.isAttackActive(attackState)) {
+      this.playerSprite?.sprite.clearTint();
+      this.destroyAttackFeedback();
+      return;
+    }
+
+    this.playerSprite?.sprite.setTint(0xffffff);
+
+    const hitbox = this.combatRules.computeHitbox(
+      this.playerState.position.x,
+      this.playerState.position.y,
+      attackState.facingDirection,
+    );
+
+    if (!this.attackHitboxFeedback) {
+      this.attackHitboxFeedback = this.add
+        .rectangle(
+          hitbox.x + hitbox.width / 2,
+          hitbox.y + hitbox.height / 2,
+          hitbox.width,
+          hitbox.height,
+          0xffffff,
+          0.35,
+        )
+        .setDepth(4);
+    } else {
+      this.attackHitboxFeedback.setPosition(
+        hitbox.x + hitbox.width / 2,
+        hitbox.y + hitbox.height / 2,
+      );
+      this.attackHitboxFeedback.setSize(hitbox.width, hitbox.height);
+      this.attackHitboxFeedback.setVisible(true);
+    }
+  }
+
+  private destroyEnemySprite(enemyId: string): void {
+    const sprite = this.enemySprites.get(enemyId);
+
+    if (!sprite) {
+      return;
+    }
+
+    sprite.destroy();
+    this.enemySprites.delete(enemyId);
+    this.deps.enemyPort.removeEnemy(enemyId);
+  }
+
+  private destroyEnemySprites(): void {
+    for (const sprite of this.enemySprites.values()) {
+      sprite.destroy();
+    }
+
+    this.enemySprites.clear();
+  }
+
+  private destroyAttackFeedback(): void {
+    this.attackHitboxFeedback?.destroy();
+    this.attackHitboxFeedback = undefined;
   }
 
   private renderLevelObjects(): void {
@@ -434,6 +658,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.closeCharacterMenu();
+    this.closePauseMenu();
     this.isRespawning = true;
     const camera = this.cameras.main;
 
@@ -456,6 +681,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.closeCharacterMenu();
+    this.closePauseMenu();
     this.isCompleting = true;
     const camera = this.cameras.main;
     const nextLevelId = getNextLevelId(this.levelId);

@@ -21,10 +21,13 @@ export function createMenuList(
     x: number;
     y: number;
     lineHeight?: number;
+    depth?: number;
+    scrollFactor?: number;
     onSelect: (item: MenuListItem, index: number) => void;
   },
 ): MenuList {
   const lineHeight = options.lineHeight ?? 48;
+  const scrollFactor = options.scrollFactor ?? 1;
   let selectedIndex = 0;
   const labels: Phaser.GameObjects.Text[] = [];
 
@@ -41,7 +44,12 @@ export function createMenuList(
         fontSize: '28px',
         color: DEFAULT_COLOR,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setScrollFactor(scrollFactor);
+
+    if (options.depth !== undefined) {
+      label.setDepth(options.depth);
+    }
 
     labels.push(label);
   });

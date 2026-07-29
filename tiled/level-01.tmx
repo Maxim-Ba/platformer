@@ -73,5 +73,10 @@
   <object id="2" name="Checkpoint" type="checkpoint" x="480" y="512" width="32" height="32"/>
   <object id="3" name="Spikes" type="hazard" x="720" y="512" width="96" height="64"/>
   <object id="4" name="Exit" type="level_exit" x="1121.33" y="472" width="64" height="64"/>
+  <object id="5" name="Patrol Enemy" type="enemy_spawn" x="288" y="512" width="32" height="32">
+   <properties>
+    <property name="patrolDistance" type="int" value="120"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>

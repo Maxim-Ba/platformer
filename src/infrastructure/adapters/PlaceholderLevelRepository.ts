@@ -19,6 +19,7 @@ export class PlaceholderLevelRepository implements ILevelRepository {
       exits: [],
       hazards: [],
       checkpoints: [],
+      enemySpawns: [],
     };
   }
 }

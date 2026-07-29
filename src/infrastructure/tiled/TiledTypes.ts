@@ -13,6 +13,7 @@ export interface TiledObject {
   readonly width: number;
   readonly height: number;
   readonly visible?: boolean;
+  readonly properties?: readonly TiledProperty[];
 }
 
 export interface TiledObjectGroup {

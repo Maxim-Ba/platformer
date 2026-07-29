@@ -66,3 +66,50 @@ Consumers MUST be able to update a subset of settings without overwriting unrela
 
 - **WHEN** `updateSettings` is called with a partial patch (e.g. only master volume)
 - **THEN** only specified fields MUST change; other settings MUST remain unchanged
+
+### Requirement: Settings UI scene
+
+The game MUST provide a SettingsScene that allows the player to view and modify settings through `ISettingsPort` and `UpdateSettings` use case.
+
+#### Scenario: Open settings from menu
+
+- **WHEN** player opens SettingsScene from MainMenuScene
+- **THEN** current settings MUST be loaded via `ISettingsPort.getSettings()`
+
+#### Scenario: Adjust audio volume
+
+- **WHEN** player changes master, music, or sfx volume in SettingsScene
+- **THEN** `UpdateSettings` MUST persist the change via `ISettingsPort`
+
+#### Scenario: Toggle fullscreen
+
+- **WHEN** player toggles fullscreen in SettingsScene
+- **THEN** the game MUST apply fullscreen mode and persist the `video.fullscreen` setting
+
+#### Scenario: Return to main menu
+
+- **WHEN** player presses Escape in SettingsScene
+- **THEN** the game MUST transition back to MainMenuScene without losing saved settings changes
+
+### Requirement: Settings return context
+
+SettingsScene MUST support a configurable return destination so it can be opened from both MainMenuScene and paused GameScene.
+
+#### Scenario: Return to main menu by default
+
+- **WHEN** SettingsScene is opened from MainMenuScene without explicit return context
+- **THEN** pressing Escape MUST return to MainMenuScene
+
+#### Scenario: Return to paused game from pause
+
+- **WHEN** SettingsScene is opened from the in-game pause menu with return context pointing to GameScene
+- **THEN** pressing Escape MUST close SettingsScene and resume paused GameScene without transitioning to MainMenuScene
+
+### Requirement: Settings scene uses application dependencies
+
+SettingsScene MUST access `ISettingsPort` and `UpdateSettings` via `AppDependencies` from scene registry.
+
+#### Scenario: No direct adapter usage
+
+- **WHEN** SettingsScene reads or updates settings
+- **THEN** it MUST use registry-provided `settingsPort` and `updateSettings`, not concrete adapters

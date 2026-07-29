@@ -58,6 +58,25 @@ Object layers MUST define typed spawn points parsed into domain-level level obje
 - **WHEN** level contains object type `checkpoint`
 - **THEN** activating checkpoint MUST update respawn position for subsequent deaths
 
+### Requirement: Enemy spawn objects
+
+Tiled object layers MUST support `enemy_spawn` objects parsed into domain level definitions.
+
+#### Scenario: Parse enemy spawn
+
+- **WHEN** level JSON contains object type `enemy_spawn`
+- **THEN** `LevelDefinition` MUST include enemy spawn entries with position and id
+
+#### Scenario: Optional patrol distance property
+
+- **WHEN** `enemy_spawn` object has custom property `patrolDistance`
+- **THEN** parsed spawn MUST include that value; otherwise documented default MUST apply
+
+#### Scenario: Spawn enemies at level start
+
+- **WHEN** GameScene loads a level with enemy spawns
+- **THEN** enemies MUST be instantiated at parsed coordinates via `IEnemyPort`
+
 ### Requirement: Level definition port
 
 Application layer MUST load levels through `ILevelRepository` returning domain `LevelDefinition` without Phaser types.
@@ -65,7 +84,7 @@ Application layer MUST load levels through `ILevelRepository` returning domain `
 #### Scenario: Use case consumes domain level model
 
 - **WHEN** LoadLevel use case executes
-- **THEN** it MUST receive spawn points, exits, hazards, and checkpoints as domain structures
+- **THEN** it MUST receive spawn points, exits, hazards, checkpoints, and enemy spawns as domain structures
 
 ### Requirement: Tiled project conventions
 
