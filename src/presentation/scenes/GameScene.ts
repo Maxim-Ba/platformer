@@ -51,6 +51,7 @@ function createInputSnapshot(inputPort: IInputPort): InputSnapshot {
   return {
     horizontalAxis,
     jumpPressed: inputPort.isJumpPressed(),
+    dashPressed: inputPort.isDashPressed(),
   };
 }
 
@@ -133,16 +134,35 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.deps.healthPort.tick(delta);
+    this.deps.dashPort.tick(delta);
 
     const previousPosition = this.playerState.position;
     const wasGrounded = this.playerState.isGrounded;
+    const input = createInputSnapshot(this.deps.inputPort);
+    const facingDirection = this.playerSprite.getFacingDirection();
 
-    this.playerState = this.deps.updatePlayerMovement.execute({
-      state: this.playerState,
-      input: createInputSnapshot(this.deps.inputPort),
-      deltaMs: delta,
-      wasGrounded,
+    this.deps.executeDash.execute({
+      dashPressed: input.dashPressed,
+      horizontalAxis: input.horizontalAxis,
+      facingDirection,
     });
+
+    const dashState = this.deps.dashPort.getDashState();
+
+    if (dashState.isDashing) {
+      this.playerState = this.deps.updatePlayerDash.execute({
+        state: this.playerState,
+        direction: dashState.direction,
+        deltaMs: delta,
+      });
+    } else {
+      this.playerState = this.deps.updatePlayerMovement.execute({
+        state: this.playerState,
+        input,
+        deltaMs: delta,
+        wasGrounded,
+      });
+    }
 
     this.playerState = this.deps.levelCollisionResolver.resolve(
       this.groundLayer,
@@ -156,6 +176,7 @@ export class GameScene extends Phaser.Scene {
     this.handleCombat(delta);
 
     this.playerSprite.syncFromState(this.playerState);
+    this.playerSprite.setDashing(dashState.isDashing);
     this.deps.physicsPort.syncFromDomain(PLAYER_ENTITY_ID, this.playerState);
     this.deps.cameraPort.update(delta);
     this.hud?.update();
@@ -172,6 +193,7 @@ export class GameScene extends Phaser.Scene {
     this.deps.manaPort.reset();
     this.deps.energyPort.reset();
     this.deps.combatPort.reset();
+    this.deps.dashPort.reset();
     this.deps.enemyPort.reset();
     this.destroyEnemySprites();
     this.destroyAttackFeedback();

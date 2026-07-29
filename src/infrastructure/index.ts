@@ -2,6 +2,7 @@ export { PlaceholderInputAdapter } from './adapters/PlaceholderInputAdapter';
 export { PlaceholderPhysicsAdapter } from './adapters/PlaceholderPhysicsAdapter';
 export { PlaceholderLevelRepository } from './adapters/PlaceholderLevelRepository';
 export { InMemoryHealthAdapter } from './adapters/InMemoryHealthAdapter';
+export { InMemoryDashAdapter } from './adapters/InMemoryDashAdapter';
 export { LocalStorageSettingsAdapter } from './adapters/LocalStorageSettingsAdapter';
 export { LocalStorageSaveAdapter } from './adapters/LocalStorageSaveAdapter';
 export { InMemoryProgressionAdapter } from './adapters/InMemoryProgressionAdapter';

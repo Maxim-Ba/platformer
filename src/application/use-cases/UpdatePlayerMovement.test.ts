@@ -28,7 +28,7 @@ describe('UpdatePlayerMovement', () => {
   it('executes a grounded jump with configured upward velocity', () => {
     const result = useCase.execute({
       state: createGroundedState(),
-      input: { horizontalAxis: 0, jumpPressed: true },
+      input: { horizontalAxis: 0, jumpPressed: true, dashPressed: false },
       deltaMs: 16,
       wasGrounded: true,
     });
@@ -47,7 +47,7 @@ describe('UpdatePlayerMovement', () => {
         COYOTE_TIME_MS,
         0,
       ),
-      input: { horizontalAxis: 0, jumpPressed: true },
+      input: { horizontalAxis: 0, jumpPressed: true, dashPressed: false },
       deltaMs: 16,
       wasGrounded: true,
     });
@@ -64,7 +64,7 @@ describe('UpdatePlayerMovement', () => {
         0,
         0,
       ),
-      input: { horizontalAxis: 0, jumpPressed: true },
+      input: { horizontalAxis: 0, jumpPressed: true, dashPressed: false },
       deltaMs: 16,
       wasGrounded: false,
     });
@@ -76,7 +76,7 @@ describe('UpdatePlayerMovement', () => {
   it('keeps horizontal velocity within configured max speed', () => {
     const result = useCase.execute({
       state: createGroundedState(),
-      input: { horizontalAxis: 1, jumpPressed: false },
+      input: { horizontalAxis: 1, jumpPressed: false, dashPressed: false },
       deltaMs: 16,
       wasGrounded: true,
     });
@@ -94,7 +94,7 @@ describe('UpdatePlayerMovement', () => {
         0,
         0,
       ),
-      input: { horizontalAxis: -1, jumpPressed: false },
+      input: { horizontalAxis: -1, jumpPressed: false, dashPressed: false },
       deltaMs: 16,
       wasGrounded: false,
     });
@@ -112,7 +112,7 @@ describe('UpdatePlayerMovement', () => {
         COYOTE_TIME_MS,
         JUMP_BUFFER_MS,
       ),
-      input: { horizontalAxis: 0, jumpPressed: false },
+      input: { horizontalAxis: 0, jumpPressed: false, dashPressed: false },
       deltaMs: 16,
       wasGrounded: true,
     });

@@ -1,5 +1,6 @@
 import type { ICameraPort } from '@application/ports/ICameraPort';
 import type { ICombatPort } from '@application/ports/ICombatPort';
+import type { IDashPort } from '@application/ports/IDashPort';
 import type { IEnergyPort } from '@application/ports/IEnergyPort';
 import type { IEnemyPort } from '@application/ports/IEnemyPort';
 import type { IHealthPort } from '@application/ports/IHealthPort';
@@ -13,10 +14,12 @@ import type { ISavePort } from '@application/ports/ISavePort';
 import { AddExperience } from '@application/use-cases/AddExperience';
 import { AddItem } from '@application/use-cases/AddItem';
 import { ApplyDamage } from '@application/use-cases/ApplyDamage';
+import { ExecuteDash } from '@application/use-cases/ExecuteDash';
 import { ExecuteMeleeAttack } from '@application/use-cases/ExecuteMeleeAttack';
 import { LoadLevel } from '@application/use-cases/LoadLevel';
 import { RemoveItem } from '@application/use-cases/RemoveItem';
 import { UpdateEnemies } from '@application/use-cases/UpdateEnemies';
+import { UpdatePlayerDash } from '@application/use-cases/UpdatePlayerDash';
 import { UpdatePlayerMovement } from '@application/use-cases/UpdatePlayerMovement';
 import { UpdateSettings } from '@application/use-cases/UpdateSettings';
 import type { ISettingsPort } from '@application/ports/ISettingsPort';
@@ -26,6 +29,7 @@ import { SaveGame } from '@application/use-cases/SaveGame';
 import { StartNewGame } from '@application/use-cases/StartNewGame';
 import { UseItem } from '@application/use-cases/UseItem';
 import { InMemoryCombatAdapter } from '@infrastructure/adapters/InMemoryCombatAdapter';
+import { InMemoryDashAdapter } from '@infrastructure/adapters/InMemoryDashAdapter';
 import { InMemoryEnergyAdapter } from '@infrastructure/adapters/InMemoryEnergyAdapter';
 import { InMemoryEnemyAdapter } from '@infrastructure/adapters/InMemoryEnemyAdapter';
 import { InMemoryHealthAdapter } from '@infrastructure/adapters/InMemoryHealthAdapter';
@@ -71,8 +75,11 @@ export interface SceneDependencies {
   manaPort: IManaPort;
   energyPort: IEnergyPort;
   combatPort: ICombatPort;
+  dashPort: IDashPort;
   enemyPort: IEnemyPort;
   updatePlayerMovement: UpdatePlayerMovement;
+  updatePlayerDash: UpdatePlayerDash;
+  executeDash: ExecuteDash;
   applyDamage: ApplyDamage;
   executeMeleeAttack: ExecuteMeleeAttack;
   updateEnemies: UpdateEnemies;
@@ -98,6 +105,10 @@ function createEnergyPort(): IEnergyPort {
 
 function createCombatPort(): ICombatPort {
   return new InMemoryCombatAdapter();
+}
+
+function createDashPort(): IDashPort {
+  return new InMemoryDashAdapter();
 }
 
 function createEnemyPort(): IEnemyPort {
@@ -147,7 +158,9 @@ export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies 
   const manaPort = createManaPort();
   const energyPort = createEnergyPort();
   const combatPort = createCombatPort();
+  const dashPort = createDashPort();
   const enemyPort = createEnemyPort();
+  const progressionPort = createProgressionPort();
   const applyDamage = new ApplyDamage(healthPort);
 
   return {
@@ -158,8 +171,11 @@ export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies 
     manaPort,
     energyPort,
     combatPort,
+    dashPort,
     enemyPort,
     updatePlayerMovement: new UpdatePlayerMovement(),
+    updatePlayerDash: new UpdatePlayerDash(),
+    executeDash: new ExecuteDash(dashPort, healthPort, progressionPort),
     applyDamage,
     executeMeleeAttack: new ExecuteMeleeAttack(combatPort, enemyPort),
     updateEnemies: new UpdateEnemies(enemyPort, healthPort, applyDamage),

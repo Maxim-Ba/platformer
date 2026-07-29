@@ -24,6 +24,7 @@ export {
   ENEMY_KILL_XP,
   MELEE_DAMAGE,
 } from './constants/combat';
+export { DASH_COOLDOWN_MS, DASH_DURATION_MS, DASH_SPEED } from './constants/dash';
 export { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SETTINGS_VERSION } from './constants/settings';
 export { DEFAULT_SAVE_SLOT_ID, SAVE_STORAGE_KEY_PREFIX, SAVE_VERSION } from './constants/save';
 export {
@@ -37,12 +38,14 @@ export { MovementRules, DEFAULT_MOVEMENT_CONFIG } from './services/MovementRules
 export type { MovementConfig } from './services/MovementRules';
 export { HealthRules } from './services/HealthRules';
 export { CombatRules } from './services/CombatRules';
+export { DashRules } from './services/DashRules';
 export { EnemyRules } from './services/EnemyRules';
 export { SettingsRules } from './services/SettingsRules';
 export { ProgressionRules } from './services/ProgressionRules';
 export { InventoryRules } from './services/InventoryRules';
 export { PlayerState } from './value-objects/PlayerState';
 export { AttackState } from './value-objects/AttackState';
+export { DashState } from './value-objects/DashState';
 export { HealthState } from './value-objects/HealthState';
 export { ProgressionState } from './value-objects/ProgressionState';
 export { InventoryState } from './value-objects/InventoryState';

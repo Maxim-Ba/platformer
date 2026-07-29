@@ -16,4 +16,8 @@ export class PlaceholderInputAdapter implements IInputPort {
   isAttackPressed(): boolean {
     return false;
   }
+
+  isDashPressed(): boolean {
+    return false;
+  }
 }

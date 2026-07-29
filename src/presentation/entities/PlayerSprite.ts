@@ -3,14 +3,34 @@ import { AssetKeys } from '@game/asset-keys';
 import Phaser from 'phaser';
 
 const RUN_SPEED_THRESHOLD = 10;
+const DASH_TINT = 0x88ccff;
+const DASH_ALPHA = 0.6;
 
 export class PlayerSprite {
   readonly sprite: Phaser.GameObjects.Sprite;
+  private facingDirection: -1 | 1 = 1;
+  private isDashing = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.sprite = scene.add.sprite(x, y, AssetKeys.Player);
     this.sprite.setOrigin(0.5, 1);
     this.sprite.setDisplaySize(32, 48);
+  }
+
+  getFacingDirection(): -1 | 1 {
+    return this.facingDirection;
+  }
+
+  setDashing(isDashing: boolean): void {
+    this.isDashing = isDashing;
+
+    if (isDashing) {
+      this.sprite.setTint(DASH_TINT);
+      this.sprite.setAlpha(DASH_ALPHA);
+      return;
+    }
+
+    this.sprite.setAlpha(1);
   }
 
   syncFromState(state: PlayerState): void {
@@ -20,9 +40,15 @@ export class PlayerSprite {
     );
 
     if (state.velocity.x < 0) {
+      this.facingDirection = -1;
       this.sprite.setFlipX(true);
     } else if (state.velocity.x > 0) {
+      this.facingDirection = 1;
       this.sprite.setFlipX(false);
+    }
+
+    if (this.isDashing) {
+      return;
     }
 
     this.applyMovementVisuals(state);
