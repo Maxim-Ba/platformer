@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Phaser-сцены и правила переходов: Boot → Preload → MainMenu → Game → GameOver. Сцены остаются thin и делегируют gameplay-логику use cases.
+Phaser-сцены и правила переходов: Boot → Preload → MainMenu → Game → LevelComplete / GameOver. Сцены остаются thin и делегируют gameplay-логику use cases.
 
 ## Requirements
 
 ### Requirement: Core scene set
 
-The game MUST implement Boot, Preload, MainMenu, Game, and GameOver scenes with documented transition rules.
+The game MUST implement Boot, Preload, MainMenu, Game, GameOver, and LevelComplete scenes with documented transition rules.
 
 #### Scenario: Boot to Preload transition
 
@@ -27,8 +27,13 @@ The game MUST implement Boot, Preload, MainMenu, Game, and GameOver scenes with 
 
 #### Scenario: Game over flow
 
-- **WHEN** player exhausts lives or selects restart from GameOverScene
+- **WHEN** player dies or selects restart from GameOverScene
 - **THEN** the game MUST transition to GameScene or MainMenuScene according to documented rules
+
+#### Scenario: Level complete flow
+
+- **WHEN** player reaches level exit and LevelCompleteScene is shown
+- **THEN** player MUST be able to navigate to next level, retry, or main menu per level-complete-flow rules
 
 ### Requirement: Thin presentation scenes
 

@@ -46,7 +46,7 @@ Object layers MUST define typed spawn points parsed into domain-level level obje
 #### Scenario: Level exit
 
 - **WHEN** player overlaps object type `level_exit`
-- **THEN** level completion flow MUST trigger (transition or game over per game rules)
+- **THEN** level complete flow MUST trigger via LevelCompleteScene
 
 #### Scenario: Hazard placement
 

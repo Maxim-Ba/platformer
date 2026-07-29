@@ -56,3 +56,12 @@ Level thresholds and XP calculations MUST be pure domain logic testable without 
 
 - **WHEN** progression unit tests run
 - **THEN** they MUST execute against domain/application code only
+
+### Requirement: Progression state readable for score HUD
+
+`IProgressionPort` MUST provide sufficient state for HUD to display player score (level and experience).
+
+#### Scenario: HUD reads progression
+
+- **WHEN** score HUD widget calls `getProgression()`
+- **THEN** returned `ProgressionState` MUST include `level` and `experience` for display formatting

@@ -66,3 +66,12 @@ Default max HP, hazard damage, and invulnerability duration MUST be defined in d
 
 - **WHEN** developer adjusts max HP or hazard damage
 - **THEN** changes MUST be possible via constants without modifying scene code
+
+### Requirement: Health state readable for HUD
+
+`IHealthPort` MUST provide sufficient state for HUD to display current and max HP without accessing adapter internals.
+
+#### Scenario: HUD reads health
+
+- **WHEN** health HUD widget calls `getHealth()`
+- **THEN** returned `HealthState` MUST include `currentHp` and `maxHp` for display formatting

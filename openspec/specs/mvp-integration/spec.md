@@ -50,7 +50,12 @@ The MVP MUST support a complete session from main menu through level completion 
 #### Scenario: Full session
 
 - **WHEN** player starts from MainMenuScene
-- **THEN** they MUST be able to reach level exit or GameOverScene through documented hazard and respawn flow
+- **THEN** they MUST be able to reach level exit and see LevelCompleteScene, or reach GameOverScene through documented death flow
+
+#### Scenario: Victory distinct from defeat
+
+- **WHEN** player completes a level by reaching exit
+- **THEN** they MUST NOT see the game over screen
 
 ### Requirement: Contributor documentation
 
@@ -60,3 +65,17 @@ README MUST document Tiled export workflow and Blasphemous-inspired scope bounda
 
 - **WHEN** a developer reads README
 - **THEN** they MUST find steps to export Tiled maps to `public/assets/maps/`
+
+### Requirement: In-game HUD during gameplay
+
+The MVP gameplay session MUST display a modular HUD with player resources and score while GameScene is active.
+
+#### Scenario: HUD visible during level
+
+- **WHEN** player is playing a level in GameScene
+- **THEN** HUD MUST show HP, Mana, Energy (bottom-left) and score (top-right) alongside control hints
+
+#### Scenario: HUD hidden outside gameplay
+
+- **WHEN** player is on MainMenuScene, GameOverScene, or LevelCompleteScene
+- **THEN** in-game HUD widgets MUST NOT be present

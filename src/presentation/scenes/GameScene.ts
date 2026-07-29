@@ -15,6 +15,7 @@ import { SceneKeys } from '@game/scene-keys';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
+import { createGameHud, type GameHud } from '@presentation/ui/hud/GameHud';
 import Phaser from 'phaser';
 
 const CHECKPOINT_XP_REWARD = 10;
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
   private keyEsc!: Phaser.Input.Keyboard.Key;
   private isRespawning = false;
   private isCompleting = false;
+  private hud?: GameHud;
 
   constructor() {
     super({ key: SceneKeys.Game });
@@ -111,15 +113,24 @@ export class GameScene extends Phaser.Scene {
     this.playerSprite.syncFromState(this.playerState);
     this.deps.physicsPort.syncFromDomain(PLAYER_ENTITY_ID, this.playerState);
     this.deps.cameraPort.update(delta);
+    this.hud?.update();
   }
 
   private resetSceneState(): void {
+    this.destroyHud();
     this.playerSprite = undefined;
     this.groundLayer = undefined;
     this.activatedCheckpointIds = new Set();
     this.deps.healthPort.reset();
+    this.deps.manaPort.reset();
+    this.deps.energyPort.reset();
     this.isRespawning = false;
     this.isCompleting = false;
+  }
+
+  private destroyHud(): void {
+    this.hud?.destroy();
+    this.hud = undefined;
   }
 
   private bindSceneInput(): void {
@@ -178,17 +189,24 @@ export class GameScene extends Phaser.Scene {
     this.renderLevelObjects();
     this.spawnPlayer(spawnPosition);
     this.setupCameraFollow();
-
-    this.add
-      .text(24, 24, 'A/D or arrows — move, Space — jump, Esc — game over', {
-        color: '#e2e8f0',
-        fontFamily: 'monospace',
-        fontSize: '20px',
-      })
-      .setScrollFactor(0)
-      .setDepth(10);
+    this.createHud();
 
     this.registry.set('currentLevelId', this.levelId);
+  }
+
+  private createHud(): void {
+    const appDependencies = getAppDependenciesFromRegistry(this);
+
+    this.hud = createGameHud(this, {
+      healthPort: this.deps.healthPort,
+      manaPort: this.deps.manaPort,
+      energyPort: this.deps.energyPort,
+      progressionPort: appDependencies.progressionPort,
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.destroyHud();
+    });
   }
 
   private renderLevelObjects(): void {

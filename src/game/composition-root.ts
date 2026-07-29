@@ -1,5 +1,7 @@
 import type { ICameraPort } from '@application/ports/ICameraPort';
+import type { IEnergyPort } from '@application/ports/IEnergyPort';
 import type { IHealthPort } from '@application/ports/IHealthPort';
+import type { IManaPort } from '@application/ports/IManaPort';
 import type { IInputPort } from '@application/ports/IInputPort';
 import type { IInventoryPort } from '@application/ports/IInventoryPort';
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
@@ -19,7 +21,9 @@ import { LoadGame } from '@application/use-cases/LoadGame';
 import { SaveGame } from '@application/use-cases/SaveGame';
 import { StartNewGame } from '@application/use-cases/StartNewGame';
 import { UseItem } from '@application/use-cases/UseItem';
+import { InMemoryEnergyAdapter } from '@infrastructure/adapters/InMemoryEnergyAdapter';
 import { InMemoryHealthAdapter } from '@infrastructure/adapters/InMemoryHealthAdapter';
+import { InMemoryManaAdapter } from '@infrastructure/adapters/InMemoryManaAdapter';
 import { InMemoryInventoryAdapter } from '@infrastructure/adapters/InMemoryInventoryAdapter';
 import { InMemoryProgressionAdapter } from '@infrastructure/adapters/InMemoryProgressionAdapter';
 import { LocalStorageSaveAdapter } from '@infrastructure/adapters/LocalStorageSaveAdapter';
@@ -58,6 +62,8 @@ export interface SceneDependencies {
   physicsPort: IPhysicsPort;
   cameraPort: ICameraPort;
   healthPort: IHealthPort;
+  manaPort: IManaPort;
+  energyPort: IEnergyPort;
   updatePlayerMovement: UpdatePlayerMovement;
   applyDamage: ApplyDamage;
   loadLevel: LoadLevel;
@@ -70,6 +76,14 @@ function createLevelRepository(): TiledLevelRepository {
 
 function createHealthPort(): IHealthPort {
   return new InMemoryHealthAdapter();
+}
+
+function createManaPort(): IManaPort {
+  return new InMemoryManaAdapter();
+}
+
+function createEnergyPort(): IEnergyPort {
+  return new InMemoryEnergyAdapter();
 }
 
 let settingsPortSingleton: ISettingsPort | undefined;
@@ -112,12 +126,16 @@ function createSavePort(): ISavePort {
 export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies {
   const levelRepository = createLevelRepository();
   const healthPort = createHealthPort();
+  const manaPort = createManaPort();
+  const energyPort = createEnergyPort();
 
   return {
     inputPort: new PhaserInputAdapter(scene),
     physicsPort: new PhaserPhysicsAdapter(scene),
     cameraPort: new PhaserSmoothCameraAdapter(scene.cameras.main),
     healthPort,
+    manaPort,
+    energyPort,
     updatePlayerMovement: new UpdatePlayerMovement(),
     applyDamage: new ApplyDamage(healthPort),
     loadLevel: new LoadLevel(levelRepository),
