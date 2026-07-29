@@ -8,8 +8,10 @@ import { BootScene } from '@presentation/scenes/BootScene';
 import { GameOverScene } from '@presentation/scenes/GameOverScene';
 import { GameScene } from '@presentation/scenes/GameScene';
 import { LevelCompleteScene } from '@presentation/scenes/LevelCompleteScene';
+import { LoadGameScene } from '@presentation/scenes/LoadGameScene';
 import { MainMenuScene } from '@presentation/scenes/MainMenuScene';
 import { PreloadScene } from '@presentation/scenes/PreloadScene';
+import { SettingsScene } from '@presentation/scenes/SettingsScene';
 
 export function registerScenes(game: Phaser.Game): void {
   game.scene.add(SceneKeys.Boot, BootScene);
@@ -18,6 +20,8 @@ export function registerScenes(game: Phaser.Game): void {
   game.scene.add(SceneKeys.Game, GameScene);
   game.scene.add(SceneKeys.GameOver, GameOverScene);
   game.scene.add(SceneKeys.LevelComplete, LevelCompleteScene);
+  game.scene.add(SceneKeys.Settings, SettingsScene);
+  game.scene.add(SceneKeys.LoadGame, LoadGameScene);
 }
 
 export function createGame(): Phaser.Game {

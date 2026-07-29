@@ -1,4 +1,6 @@
+import { DEFAULT_SAVE_SLOT_ID } from '@domain/constants/save';
 import type { LevelCompleteSceneData } from '@game/scene-data';
+import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
 import Phaser from 'phaser';
 
@@ -109,6 +111,8 @@ export class LevelCompleteScene extends Phaser.Scene {
 
   private goToMenu(): void {
     this.hasTransitioned = true;
+    const dependencies = getAppDependenciesFromRegistry(this);
+    dependencies.saveGame.execute({ slotId: DEFAULT_SAVE_SLOT_ID, levelId: this.levelId });
     this.scene.start(SceneKeys.MainMenu);
   }
 }

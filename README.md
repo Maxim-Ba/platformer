@@ -107,13 +107,29 @@ MVP фокусируется на **ощущении игры**, а не на п
 | Retry (на экране Level Complete) | R |
 | Next Level (на экране Level Complete, если есть следующий уровень) | N / Enter |
 | Main Menu | M |
+| Навигация по меню | ↑ / ↓ |
+| Подтверждение в меню | Enter / Space |
+| Настройки: громкость | ← / → (±0.1) |
+| Настройки: fullscreen | Space |
+| Назад (Настройки / Загрузка) | Esc |
 
 ## Game flow
 
 ```
-Main Menu → Game → Level Complete (победа: выход level_exit)
-                 → Game Over (смерть: hazard / Esc)
+Main Menu
+  ├─ Новая игра → Game (DEFAULT_LEVEL_ID, сброс progression/inventory)
+  ├─ Загрузка → LoadGameScene → Game (восстановленный levelId и прогресс)
+  └─ Настройки → SettingsScene → Main Menu (Esc)
+
+Game → Level Complete (победа: выход level_exit)
+     → Game Over (смерть: hazard / Esc)
 ```
+
+- **Главное меню:** три пункта — «Новая игра», «Загрузка», «Настройки». Навигация ↑↓, подтверждение Enter/Space.
+- **Новая игра:** сброс progression/inventory через `StartNewGame`, старт с `DEFAULT_LEVEL_ID`.
+- **Загрузка:** один quick-save слот (`slot-1`). Если сохранения нет — «Нет сохранений». Enter загружает прогресс.
+- **Настройки:** master/music/sfx volume (← →), fullscreen (Space). Изменения сохраняются в localStorage.
+- **Автосохранение:** при переходе в Main Menu с экранов Game Over / Level Complete (M) текущий прогресс сохраняется в слот `slot-1`.
 
 - **Победа:** overlap с `level_exit` → fade-out → экран **Level Complete** (зелёный). Доступны Retry (R), Main Menu (M), Next Level (N/Enter — только если в `LEVEL_PROGRESSION` есть следующий уровень).
 - **Поражение:** смерть от hazard или Esc (отладка) → экран **Game Over** (красный). Restart (R/Enter) или Main Menu (M).

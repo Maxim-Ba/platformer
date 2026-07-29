@@ -6,4 +6,5 @@ export interface IInventoryPort {
   addItem(item: InventoryItem): boolean;
   removeItem(itemId: string): boolean;
   useItem(itemId: string): boolean;
+  restoreInventory(state: InventoryState): void;
 }

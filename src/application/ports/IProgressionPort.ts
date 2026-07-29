@@ -5,4 +5,5 @@ export interface IProgressionPort {
   addExperience(amount: number): void;
   getUnlockedIds(): readonly string[];
   isUnlocked(id: string): boolean;
+  restoreProgression(state: ProgressionState): void;
 }

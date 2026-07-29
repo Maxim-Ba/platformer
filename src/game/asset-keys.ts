@@ -2,9 +2,11 @@ export const AssetKeys = {
   Player: 'player',
   Ground: 'ground',
   Tileset: 'platformer-tiles',
+  BeastSoldierTileset: 'beast-soldier-tiles',
 } as const;
 
 export const LEVEL_TILESET_PATH = 'assets/tilesets/platformer-tiles.png';
+export const BEAST_SOLDIER_TILESET_PATH = 'assets/tilesets/beast_soldier.png';
 
 export type AssetKey = (typeof AssetKeys)[keyof typeof AssetKeys];
 

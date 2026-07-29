@@ -40,4 +40,8 @@ export class InMemoryInventoryAdapter implements IInventoryPort {
     this.state = result.state;
     return true;
   }
+
+  restoreInventory(state: InventoryState): void {
+    this.state = state;
+  }
 }

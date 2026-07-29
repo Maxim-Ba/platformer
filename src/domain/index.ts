@@ -16,6 +16,7 @@ export {
 } from './constants/movement';
 export { HAZARD_DAMAGE, INVULNERABILITY_MS, MAX_HP } from './constants/health';
 export { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SETTINGS_VERSION } from './constants/settings';
+export { DEFAULT_SAVE_SLOT_ID, SAVE_STORAGE_KEY_PREFIX, SAVE_VERSION } from './constants/save';
 export {
   INITIAL_EXPERIENCE,
   INITIAL_LEVEL,
@@ -36,4 +37,5 @@ export { InventoryState } from './value-objects/InventoryState';
 export { Vector2 } from './value-objects/Vector2';
 export { Velocity } from './value-objects/Velocity';
 export type { GameSettings, GameSettingsPatch } from './types/GameSettings';
+export type { GameSave, SaveSlotMeta } from './types/GameSave';
 export type { InventoryItem } from './entities/InventoryItem';

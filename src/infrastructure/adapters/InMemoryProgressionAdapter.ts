@@ -22,4 +22,8 @@ export class InMemoryProgressionAdapter implements IProgressionPort {
   isUnlocked(id: string): boolean {
     return this.rules.isUnlocked(this.state.unlockedIds, id);
   }
+
+  restoreProgression(state: ProgressionState): void {
+    this.state = state;
+  }
 }

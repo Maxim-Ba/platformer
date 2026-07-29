@@ -3,6 +3,7 @@ export { PlaceholderPhysicsAdapter } from './adapters/PlaceholderPhysicsAdapter'
 export { PlaceholderLevelRepository } from './adapters/PlaceholderLevelRepository';
 export { InMemoryHealthAdapter } from './adapters/InMemoryHealthAdapter';
 export { LocalStorageSettingsAdapter } from './adapters/LocalStorageSettingsAdapter';
+export { LocalStorageSaveAdapter } from './adapters/LocalStorageSaveAdapter';
 export { InMemoryProgressionAdapter } from './adapters/InMemoryProgressionAdapter';
 export { InMemoryInventoryAdapter } from './adapters/InMemoryInventoryAdapter';
 export { LevelCollisionResolver } from './phaser/LevelCollisionResolver';

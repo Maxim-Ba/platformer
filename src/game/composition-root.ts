@@ -5,7 +5,7 @@ import type { IInventoryPort } from '@application/ports/IInventoryPort';
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
 import type { IPhysicsPort } from '@application/ports/IPhysicsPort';
 import type { IProgressionPort } from '@application/ports/IProgressionPort';
-import type { ISettingsPort } from '@application/ports/ISettingsPort';
+import type { ISavePort } from '@application/ports/ISavePort';
 import { AddExperience } from '@application/use-cases/AddExperience';
 import { AddItem } from '@application/use-cases/AddItem';
 import { ApplyDamage } from '@application/use-cases/ApplyDamage';
@@ -13,10 +13,16 @@ import { LoadLevel } from '@application/use-cases/LoadLevel';
 import { RemoveItem } from '@application/use-cases/RemoveItem';
 import { UpdatePlayerMovement } from '@application/use-cases/UpdatePlayerMovement';
 import { UpdateSettings } from '@application/use-cases/UpdateSettings';
+import type { ISettingsPort } from '@application/ports/ISettingsPort';
+import { ListSaveSlots } from '@application/use-cases/ListSaveSlots';
+import { LoadGame } from '@application/use-cases/LoadGame';
+import { SaveGame } from '@application/use-cases/SaveGame';
+import { StartNewGame } from '@application/use-cases/StartNewGame';
 import { UseItem } from '@application/use-cases/UseItem';
 import { InMemoryHealthAdapter } from '@infrastructure/adapters/InMemoryHealthAdapter';
 import { InMemoryInventoryAdapter } from '@infrastructure/adapters/InMemoryInventoryAdapter';
 import { InMemoryProgressionAdapter } from '@infrastructure/adapters/InMemoryProgressionAdapter';
+import { LocalStorageSaveAdapter } from '@infrastructure/adapters/LocalStorageSaveAdapter';
 import { LocalStorageSettingsAdapter } from '@infrastructure/adapters/LocalStorageSettingsAdapter';
 import { LevelCollisionResolver } from '@infrastructure/phaser/LevelCollisionResolver';
 import { TiledLevelRepository } from '@infrastructure/tiled/TiledLevelRepository';
@@ -39,6 +45,11 @@ export interface AppDependencies {
   addItem: AddItem;
   removeItem: RemoveItem;
   useItem: UseItem;
+  savePort: ISavePort;
+  startNewGame: StartNewGame;
+  saveGame: SaveGame;
+  loadGame: LoadGame;
+  listSaveSlots: ListSaveSlots;
   createSceneDependencies: (scene: Phaser.Scene) => SceneDependencies;
 }
 
@@ -64,6 +75,7 @@ function createHealthPort(): IHealthPort {
 let settingsPortSingleton: ISettingsPort | undefined;
 let progressionPortSingleton: IProgressionPort | undefined;
 let inventoryPortSingleton: IInventoryPort | undefined;
+let savePortSingleton: ISavePort | undefined;
 
 function createSettingsPort(): ISettingsPort {
   if (!settingsPortSingleton) {
@@ -89,6 +101,14 @@ function createInventoryPort(): IInventoryPort {
   return inventoryPortSingleton;
 }
 
+function createSavePort(): ISavePort {
+  if (!savePortSingleton) {
+    savePortSingleton = new LocalStorageSaveAdapter();
+  }
+
+  return savePortSingleton;
+}
+
 export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies {
   const levelRepository = createLevelRepository();
   const healthPort = createHealthPort();
@@ -110,6 +130,7 @@ export function createAppDependencies(): AppDependencies {
   const settingsPort = createSettingsPort();
   const progressionPort = createProgressionPort();
   const inventoryPort = createInventoryPort();
+  const savePort = createSavePort();
 
   return {
     levelRepository,
@@ -122,6 +143,11 @@ export function createAppDependencies(): AppDependencies {
     addItem: new AddItem(inventoryPort),
     removeItem: new RemoveItem(inventoryPort),
     useItem: new UseItem(inventoryPort),
+    savePort,
+    startNewGame: new StartNewGame(progressionPort, inventoryPort),
+    saveGame: new SaveGame(savePort, progressionPort, inventoryPort),
+    loadGame: new LoadGame(savePort, progressionPort, inventoryPort),
+    listSaveSlots: new ListSaveSlots(savePort),
     createSceneDependencies,
   };
 }

@@ -1,64 +1,60 @@
-import { DEFAULT_LEVEL_ID } from '@game/constants';
+import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
+import { createMenuList } from '@presentation/ui/MenuList';
 import Phaser from 'phaser';
 
+const MENU_ITEMS = [
+  { id: 'new-game', label: 'Новая игра' },
+  { id: 'load', label: 'Загрузка' },
+  { id: 'settings', label: 'Настройки' },
+] as const;
+
 export class MainMenuScene extends Phaser.Scene {
-  private hasStarted = false;
+  private hasTransitioned = false;
 
   constructor() {
     super({ key: SceneKeys.MainMenu });
   }
 
   create(): void {
-    this.hasStarted = false;
+    this.hasTransitioned = false;
 
     const { width, height } = this.cameras.main;
+    const dependencies = getAppDependenciesFromRegistry(this);
 
     this.cameras.main.setBackgroundColor('#1e1b4b');
 
     this.add
-      .text(width / 2, height / 2 - 80, 'Platformer', {
+      .text(width / 2, height / 2 - 160, 'Platformer', {
         fontFamily: 'monospace',
         fontSize: '64px',
         color: '#f8fafc',
       })
       .setOrigin(0.5);
 
-    const startText = this.add
-      .text(width / 2, height / 2 + 40, 'Press SPACE or ENTER to start', {
-        fontFamily: 'monospace',
-        fontSize: '24px',
-        color: '#94a3b8',
-      })
-      .setOrigin(0.5);
+    createMenuList(this, MENU_ITEMS, {
+      x: width / 2,
+      y: height / 2,
+      onSelect: (item) => {
+        if (this.hasTransitioned) {
+          return;
+        }
 
-    this.tweens.add({
-      targets: startText,
-      alpha: { from: 1, to: 0.4 },
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
+        this.hasTransitioned = true;
+
+        if (item.id === 'new-game') {
+          const { levelId } = dependencies.startNewGame.execute();
+          this.scene.start(SceneKeys.Game, { levelId });
+          return;
+        }
+
+        if (item.id === 'load') {
+          this.scene.start(SceneKeys.LoadGame);
+          return;
+        }
+
+        this.scene.start(SceneKeys.Settings);
+      },
     });
-
-    const keyboard = this.input.keyboard;
-    if (!keyboard) {
-      return;
-    }
-
-    keyboard.once('keydown-SPACE', () => {
-      this.startGame();
-    });
-    keyboard.once('keydown-ENTER', () => {
-      this.startGame();
-    });
-  }
-
-  private startGame(): void {
-    if (this.hasStarted) {
-      return;
-    }
-
-    this.hasStarted = true;
-    this.scene.start(SceneKeys.Game, { levelId: DEFAULT_LEVEL_ID });
   }
 }

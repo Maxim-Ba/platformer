@@ -1,9 +1,14 @@
+import { DEFAULT_SAVE_SLOT_ID } from '@domain/constants/save';
+import type { GameOverSceneData } from '@game/scene-data';
+import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { DEFAULT_LEVEL_ID } from '@game/constants';
 import { SceneKeys } from '@game/scene-keys';
 import Phaser from 'phaser';
 
 export class GameOverScene extends Phaser.Scene {
   private hasTransitioned = false;
+  private levelId = DEFAULT_LEVEL_ID;
+
   private readonly onWindowKeyDown = (event: KeyboardEvent): void => {
     if (this.hasTransitioned) {
       return;
@@ -23,6 +28,10 @@ export class GameOverScene extends Phaser.Scene {
 
   constructor() {
     super({ key: SceneKeys.GameOver });
+  }
+
+  init(data: GameOverSceneData): void {
+    this.levelId = data.levelId ?? DEFAULT_LEVEL_ID;
   }
 
   create(): void {
@@ -56,11 +65,13 @@ export class GameOverScene extends Phaser.Scene {
 
   private restart(): void {
     this.hasTransitioned = true;
-    this.scene.start(SceneKeys.Game, { levelId: DEFAULT_LEVEL_ID });
+    this.scene.start(SceneKeys.Game, { levelId: this.levelId });
   }
 
   private goToMenu(): void {
     this.hasTransitioned = true;
+    const dependencies = getAppDependenciesFromRegistry(this);
+    dependencies.saveGame.execute({ slotId: DEFAULT_SAVE_SLOT_ID, levelId: this.levelId });
     this.scene.start(SceneKeys.MainMenu);
   }
 }

@@ -7,7 +7,7 @@ import { COYOTE_TIME_MS } from '@domain/constants/movement';
 import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
-import { AssetKeys } from '@game/asset-keys';
+import { AssetKeys, BEAST_SOLDIER_TILESET_PATH } from '@game/asset-keys';
 import { DEFAULT_LEVEL_ID, getNextLevelId, PLAYER_ENTITY_ID } from '@game/constants';
 import type { SceneDependencies } from '@game/composition-root';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
@@ -68,6 +68,7 @@ export class GameScene extends Phaser.Scene {
   preload(): void {
     this.load.tilemapTiledJSON(mapCacheKey(this.levelId), `assets/maps/${this.levelId}.json`);
     this.load.image(AssetKeys.Tileset, 'assets/tilesets/platformer-tiles.png');
+    this.load.image(AssetKeys.BeastSoldierTileset, BEAST_SOLDIER_TILESET_PATH);
   }
 
   create(): void {
@@ -150,13 +151,15 @@ export class GameScene extends Phaser.Scene {
     this.level = this.deps.loadLevel.fromTiledMap(this.levelId, cachedMap.data as TiledMapJson);
 
     const map = this.make.tilemap({ key: cacheKey });
-    const tileset = map.addTilesetImage('platformer', AssetKeys.Tileset);
-    if (!tileset) {
-      throw new Error(`Failed to bind tileset for level "${this.levelId}"`);
+    const platformerTileset = map.addTilesetImage('platformer', AssetKeys.Tileset);
+    const beastSoldierTileset = map.addTilesetImage('beast_soldier', AssetKeys.BeastSoldierTileset);
+    if (!platformerTileset || !beastSoldierTileset) {
+      throw new Error(`Failed to bind tilesets for level "${this.levelId}"`);
     }
 
-    const groundLayer = map.createLayer('ground', tileset, 0, 0);
-    const decorLayer = map.createLayer('decor', tileset, 0, 0);
+    const tilesets = [platformerTileset, beastSoldierTileset];
+    const groundLayer = map.createLayer('ground', tilesets, 0, 0);
+    const decorLayer = map.createLayer('decor', tilesets, 0, 0);
     if (!groundLayer || !decorLayer) {
       throw new Error(`Failed to create tile layers for level "${this.levelId}"`);
     }
@@ -364,6 +367,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private goToGameOver(): void {
-    this.scene.start(SceneKeys.GameOver);
+    this.scene.start(SceneKeys.GameOver, { levelId: this.levelId });
   }
 }

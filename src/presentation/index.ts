@@ -3,5 +3,7 @@ export { BootScene } from './scenes/BootScene';
 export { GameOverScene } from './scenes/GameOverScene';
 export { GameScene } from './scenes/GameScene';
 export { LevelCompleteScene } from './scenes/LevelCompleteScene';
+export { LoadGameScene } from './scenes/LoadGameScene';
 export { MainMenuScene } from './scenes/MainMenuScene';
 export { PreloadScene } from './scenes/PreloadScene';
+export { SettingsScene } from './scenes/SettingsScene';
