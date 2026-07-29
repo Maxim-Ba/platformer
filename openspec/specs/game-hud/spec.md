@@ -93,3 +93,8 @@ The game MUST continue showing movement/control hints during gameplay as a separ
 
 - **WHEN** GameScene is running
 - **THEN** control hints MUST remain visible on screen
+
+#### Scenario: Character menu hotkeys documented
+
+- **WHEN** control hints are displayed during gameplay
+- **THEN** the hint MUST document character menu tab hotkeys (`I`, `K`, `C`, `U`, `M`)

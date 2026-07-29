@@ -8,6 +8,11 @@ import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
 import { AssetKeys, BEAST_SOLDIER_TILESET_PATH } from '@game/asset-keys';
+import {
+  CHARACTER_MENU_TABS,
+  type CharacterMenuTabDefinition,
+  type CharacterMenuTabId,
+} from '@game/character-menu-config';
 import { DEFAULT_LEVEL_ID, getNextLevelId, PLAYER_ENTITY_ID } from '@game/constants';
 import type { SceneDependencies } from '@game/composition-root';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
@@ -16,6 +21,10 @@ import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
 import { createGameHud, type GameHud } from '@presentation/ui/hud/GameHud';
+import {
+  createCharacterMenuOverlay,
+  type CharacterMenuOverlay,
+} from '@presentation/ui/CharacterMenuOverlay';
 import Phaser from 'phaser';
 
 const CHECKPOINT_XP_REWARD = 10;
@@ -52,6 +61,12 @@ export class GameScene extends Phaser.Scene {
   private respawnPosition!: Vector2;
   private activatedCheckpointIds = new Set<string>();
   private keyEsc!: Phaser.Input.Keyboard.Key;
+  private characterMenuKeys: Array<{
+    tab: CharacterMenuTabDefinition;
+    key: Phaser.Input.Keyboard.Key;
+  }> = [];
+  private isCharacterMenuOpen = false;
+  private characterMenuOverlay?: CharacterMenuOverlay;
   private isRespawning = false;
   private isCompleting = false;
   private hud?: GameHud;
@@ -81,6 +96,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    if (this.handleCharacterMenuInput()) {
+      return;
+    }
+
     if (this.isRespawning || this.isCompleting || !this.playerSprite || !this.groundLayer) {
       return;
     }
@@ -117,6 +136,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resetSceneState(): void {
+    this.destroyCharacterMenu();
     this.destroyHud();
     this.playerSprite = undefined;
     this.groundLayer = undefined;
@@ -140,6 +160,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.keyEsc = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.characterMenuKeys = CHARACTER_MENU_TABS.map((tab) => ({
+      tab,
+      key: keyboard.addKey(tab.keyCode),
+    }));
   }
 
   private focusCanvas(): void {
@@ -206,7 +230,66 @@ export class GameScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.destroyHud();
+      this.destroyCharacterMenu();
     });
+  }
+
+  private handleCharacterMenuInput(): boolean {
+    if (this.isRespawning || this.isCompleting) {
+      return false;
+    }
+
+    if (this.isCharacterMenuOpen && Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
+      this.closeCharacterMenu();
+      return true;
+    }
+
+    for (const { tab, key } of this.characterMenuKeys) {
+      if (Phaser.Input.Keyboard.JustDown(key)) {
+        this.toggleCharacterMenuTab(tab.id);
+        return true;
+      }
+    }
+
+    return this.isCharacterMenuOpen;
+  }
+
+  private openCharacterMenu(tabId: CharacterMenuTabId): void {
+    if (this.isRespawning || this.isCompleting) {
+      return;
+    }
+
+    if (!this.characterMenuOverlay) {
+      this.characterMenuOverlay = createCharacterMenuOverlay(this);
+    }
+
+    this.characterMenuOverlay.setActiveTab(tabId);
+    this.isCharacterMenuOpen = true;
+  }
+
+  private closeCharacterMenu(): void {
+    this.isCharacterMenuOpen = false;
+    this.destroyCharacterMenu();
+  }
+
+  private toggleCharacterMenuTab(tabId: CharacterMenuTabId): void {
+    if (!this.isCharacterMenuOpen) {
+      this.openCharacterMenu(tabId);
+      return;
+    }
+
+    if (this.characterMenuOverlay?.getActiveTab() === tabId) {
+      this.closeCharacterMenu();
+      return;
+    }
+
+    this.characterMenuOverlay?.setActiveTab(tabId);
+  }
+
+  private destroyCharacterMenu(): void {
+    this.characterMenuOverlay?.destroy();
+    this.characterMenuOverlay = undefined;
+    this.isCharacterMenuOpen = false;
   }
 
   private renderLevelObjects(): void {
@@ -350,6 +433,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.closeCharacterMenu();
     this.isRespawning = true;
     const camera = this.cameras.main;
 
@@ -371,6 +455,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.closeCharacterMenu();
     this.isCompleting = true;
     const camera = this.cameras.main;
     const nextLevelId = getNextLevelId(this.levelId);

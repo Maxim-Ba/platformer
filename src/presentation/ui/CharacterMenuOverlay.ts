@@ -1,0 +1,140 @@
+import {
+  CHARACTER_MENU_TABS,
+  getTabByIndex,
+  getTabIndex,
+  type CharacterMenuTabId,
+} from '@game/character-menu-config';
+import { HUD_DEPTH } from '@presentation/ui/hud/hud-layout';
+import { createMockTabPanel } from '@presentation/ui/character-menu/MockTabPanels';
+import { createTabBar } from '@presentation/ui/TabBar';
+import Phaser from 'phaser';
+
+export const CHARACTER_MENU_DEPTH = HUD_DEPTH + 50;
+
+const PANEL_WIDTH = 1400;
+const PANEL_HEIGHT = 800;
+const PANEL_COLOR = 0x0f172a;
+const PANEL_ALPHA = 0.92;
+const DIM_ALPHA = 0.55;
+const TAB_BAR_HEIGHT = 48;
+const CONTENT_PADDING = 32;
+const TAB_BAR_DEPTH = CHARACTER_MENU_DEPTH + 2;
+
+export interface CharacterMenuOverlay {
+  setActiveTab: (tabId: CharacterMenuTabId) => void;
+  getActiveTab: () => CharacterMenuTabId;
+  destroy: () => void;
+}
+
+export function createCharacterMenuOverlay(scene: Phaser.Scene): CharacterMenuOverlay {
+  const { width, height } = scene.scale;
+  const panelX = (width - PANEL_WIDTH) / 2;
+  const panelY = (height - PANEL_HEIGHT) / 2;
+  const contentY = panelY + TAB_BAR_HEIGHT + CONTENT_PADDING;
+  const contentHeight = PANEL_HEIGHT - TAB_BAR_HEIGHT - CONTENT_PADDING * 2;
+  const contentWidth = PANEL_WIDTH - CONTENT_PADDING * 2;
+
+  const gameObjects: Phaser.GameObjects.GameObject[] = [];
+
+  const dim = scene.add
+    .rectangle(width / 2, height / 2, width, height, 0x000000, DIM_ALPHA)
+    .setScrollFactor(0)
+    .setDepth(CHARACTER_MENU_DEPTH);
+
+  const panel = scene.add
+    .rectangle(panelX + PANEL_WIDTH / 2, panelY + PANEL_HEIGHT / 2, PANEL_WIDTH, PANEL_HEIGHT, PANEL_COLOR, PANEL_ALPHA)
+    .setScrollFactor(0)
+    .setDepth(CHARACTER_MENU_DEPTH + 1);
+
+  const title = scene.add
+    .text(panelX + CONTENT_PADDING, panelY + 16, 'Персонаж', {
+      fontFamily: 'monospace',
+      fontSize: '28px',
+      color: '#f8fafc',
+    })
+    .setScrollFactor(0)
+    .setDepth(TAB_BAR_DEPTH);
+
+  gameObjects.push(dim, panel, title);
+
+  const tabPanels = new Map<CharacterMenuTabId, Phaser.GameObjects.Text>();
+  for (const tab of CHARACTER_MENU_TABS) {
+    const mockPanel = createMockTabPanel(
+      scene,
+      tab.id,
+      panelX + CONTENT_PADDING,
+      contentY,
+      contentWidth,
+      contentHeight,
+    );
+    mockPanel.setScrollFactor(0).setDepth(TAB_BAR_DEPTH).setVisible(false);
+    tabPanels.set(tab.id, mockPanel);
+    gameObjects.push(mockPanel);
+  }
+
+  let activeTabId: CharacterMenuTabId = CHARACTER_MENU_TABS[0]!.id;
+
+  const showActivePanel = (): void => {
+    tabPanels.forEach((panelObject, tabId) => {
+      panelObject.setVisible(tabId === activeTabId);
+    });
+  };
+
+  const tabBar = createTabBar(
+    scene,
+    CHARACTER_MENU_TABS.map((tab) => ({ id: tab.id, label: tab.label })),
+    {
+      x: panelX,
+      y: panelY + 56,
+      width: PANEL_WIDTH,
+      depth: TAB_BAR_DEPTH,
+      scrollFactor: 0,
+      onTabChange: (_index, item) => {
+        activeTabId = item.id as CharacterMenuTabId;
+        showActivePanel();
+      },
+    },
+  );
+
+  const setActiveTab = (tabId: CharacterMenuTabId): void => {
+    activeTabId = tabId;
+    tabBar.setActiveTab(getTabIndex(tabId));
+    showActivePanel();
+  };
+
+  const moveTab = (delta: number): void => {
+    const currentIndex = getTabIndex(activeTabId);
+    const nextTab = getTabByIndex(currentIndex + delta);
+    setActiveTab(nextTab.id);
+  };
+
+  const onKeyDown = (event: KeyboardEvent): void => {
+    if (event.code === 'ArrowLeft') {
+      event.preventDefault();
+      moveTab(-1);
+      return;
+    }
+
+    if (event.code === 'ArrowRight') {
+      event.preventDefault();
+      moveTab(1);
+    }
+  };
+
+  window.addEventListener('keydown', onKeyDown);
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    window.removeEventListener('keydown', onKeyDown);
+  });
+
+  setActiveTab(activeTabId);
+
+  return {
+    setActiveTab,
+    getActiveTab: () => activeTabId,
+    destroy: () => {
+      window.removeEventListener('keydown', onKeyDown);
+      tabBar.destroy();
+      gameObjects.forEach((object) => object.destroy());
+    },
+  };
+}
