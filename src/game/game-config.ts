@@ -17,6 +17,9 @@ export function createGameConfig(): Phaser.Types.Core.GameConfig {
       },
     },
     pixelArt: true,
+    input: {
+      gamepad: true,
+    },
     render: {
       roundPixels: true,
     },

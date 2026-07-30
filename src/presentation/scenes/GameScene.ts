@@ -13,9 +13,12 @@ import { Velocity } from '@domain/value-objects/Velocity';
 import { AssetKeys, BEAST_SOLDIER_TILESET_PATH } from '@game/asset-keys';
 import {
   CHARACTER_MENU_TABS,
+  getTabByIndex,
+  getTabIndex,
   type CharacterMenuTabDefinition,
   type CharacterMenuTabId,
 } from '@game/character-menu-config';
+import { GAMEPAD_BUTTON } from '@game/gamepad-bindings';
 import { DEFAULT_LEVEL_ID, getNextLevelId, PLAYER_ENTITY_ID } from '@game/constants';
 import type { SceneDependencies } from '@game/composition-root';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
@@ -75,6 +78,7 @@ export class GameScene extends Phaser.Scene {
     key: Phaser.Input.Keyboard.Key;
   }> = [];
   private isCharacterMenuOpen = false;
+  private lastCharacterMenuTabId: CharacterMenuTabId = 'inventory';
   private characterMenuOverlay?: CharacterMenuOverlay;
   private isPaused = false;
   private pauseMenuOverlay?: PauseMenuOverlay;
@@ -112,8 +116,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.deps.gamepadReader.update();
+
     if (this.isPaused) {
-      if (Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
+      if (
+        Phaser.Input.Keyboard.JustDown(this.keyEsc) ||
+        this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.START)
+      ) {
         this.closePauseMenu();
       }
 
@@ -128,7 +137,10 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.keyEsc)) {
+    if (
+      Phaser.Input.Keyboard.JustDown(this.keyEsc) ||
+      this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.START)
+    ) {
       this.openPauseMenu();
       return;
     }
@@ -323,6 +335,32 @@ export class GameScene extends Phaser.Scene {
       return true;
     }
 
+    if (this.isCharacterMenuOpen && this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.B)) {
+      this.closeCharacterMenu();
+      return true;
+    }
+
+    if (this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.BACK)) {
+      if (this.isCharacterMenuOpen) {
+        this.closeCharacterMenu();
+      } else {
+        this.openCharacterMenu(this.lastCharacterMenuTabId);
+      }
+      return true;
+    }
+
+    if (this.isCharacterMenuOpen) {
+      if (this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.LB)) {
+        this.cycleCharacterMenuTab(-1);
+        return true;
+      }
+
+      if (this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.RB)) {
+        this.cycleCharacterMenuTab(1);
+        return true;
+      }
+    }
+
     for (const { tab, key } of this.characterMenuKeys) {
       if (Phaser.Input.Keyboard.JustDown(key)) {
         this.toggleCharacterMenuTab(tab.id);
@@ -331,6 +369,13 @@ export class GameScene extends Phaser.Scene {
     }
 
     return this.isCharacterMenuOpen;
+  }
+
+  private cycleCharacterMenuTab(delta: number): void {
+    const currentTab = this.characterMenuOverlay?.getActiveTab() ?? this.lastCharacterMenuTabId;
+    const nextTab = getTabByIndex(getTabIndex(currentTab) + delta);
+    this.lastCharacterMenuTabId = nextTab.id;
+    this.characterMenuOverlay?.setActiveTab(nextTab.id);
   }
 
   private openCharacterMenu(tabId: CharacterMenuTabId): void {
@@ -347,6 +392,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.characterMenuOverlay.setActiveTab(tabId);
+    this.lastCharacterMenuTabId = tabId;
     this.isCharacterMenuOpen = true;
   }
 
@@ -367,6 +413,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.characterMenuOverlay?.setActiveTab(tabId);
+    this.lastCharacterMenuTabId = tabId;
   }
 
   private destroyCharacterMenu(): void {

@@ -9,5 +9,8 @@ export { InMemoryProgressionAdapter } from './adapters/InMemoryProgressionAdapte
 export { InMemoryInventoryAdapter } from './adapters/InMemoryInventoryAdapter';
 export { LevelCollisionResolver } from './phaser/LevelCollisionResolver';
 export { TiledLevelRepository } from './tiled/TiledLevelRepository';
+export { CompositeInputAdapter } from './phaser/CompositeInputAdapter';
+export { PhaserGamepadReader } from './phaser/PhaserGamepadReader';
 export { PhaserInputAdapter } from './phaser/PhaserInputAdapter';
+export { PhaserKeyboardInputAdapter } from './phaser/PhaserKeyboardInputAdapter';
 export { PhaserPhysicsAdapter } from './phaser/PhaserPhysicsAdapter';

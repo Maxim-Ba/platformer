@@ -1,6 +1,8 @@
 import type { SaveSlotMeta } from '@domain/types/GameSave';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
+import { createMenuInputHandler } from '@presentation/input/createMenuInputHandler';
+import type { MenuInputHandler } from '@presentation/input/createMenuInputHandler';
 import Phaser from 'phaser';
 
 export class LoadGameScene extends Phaser.Scene {
@@ -8,37 +10,7 @@ export class LoadGameScene extends Phaser.Scene {
   private selectedIndex = 0;
   private hasTransitioned = false;
   private slotText?: Phaser.GameObjects.Text;
-
-  private readonly onWindowKeyDown = (event: KeyboardEvent): void => {
-    if (event.code === 'Escape') {
-      event.preventDefault();
-      this.scene.start(SceneKeys.MainMenu);
-      return;
-    }
-
-    if (this.slots.length === 0) {
-      return;
-    }
-
-    if (event.code === 'ArrowUp') {
-      event.preventDefault();
-      this.selectedIndex = (this.selectedIndex - 1 + this.slots.length) % this.slots.length;
-      this.refreshSlotView();
-      return;
-    }
-
-    if (event.code === 'ArrowDown') {
-      event.preventDefault();
-      this.selectedIndex = (this.selectedIndex + 1) % this.slots.length;
-      this.refreshSlotView();
-      return;
-    }
-
-    if (event.code === 'Enter' || event.code === 'NumpadEnter' || event.code === 'Space') {
-      event.preventDefault();
-      this.loadSelectedSlot();
-    }
-  };
+  private menuInput?: MenuInputHandler;
 
   constructor() {
     super({ key: SceneKeys.LoadGame });
@@ -71,7 +43,7 @@ export class LoadGameScene extends Phaser.Scene {
         .setOrigin(0.5);
 
       this.add
-        .text(width / 2, height / 2 + 80, 'Esc — назад', {
+        .text(width / 2, height / 2 + 80, 'Esc/B — назад', {
           fontFamily: 'monospace',
           fontSize: '20px',
           color: '#64748b',
@@ -87,7 +59,7 @@ export class LoadGameScene extends Phaser.Scene {
         .setOrigin(0.5);
 
       this.add
-        .text(width / 2, height / 2 + 120, 'Enter — загрузить   Esc — назад', {
+        .text(width / 2, height / 2 + 120, 'Enter/A — загрузить   Esc/B — назад', {
           fontFamily: 'monospace',
           fontSize: '20px',
           color: '#64748b',
@@ -97,10 +69,26 @@ export class LoadGameScene extends Phaser.Scene {
       this.refreshSlotView();
     }
 
-    window.addEventListener('keydown', this.onWindowKeyDown);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener('keydown', this.onWindowKeyDown);
+    this.menuInput = createMenuInputHandler(this, {
+      onUp: () => this.moveSelection(-1),
+      onDown: () => this.moveSelection(1),
+      onConfirm: () => this.loadSelectedSlot(),
+      onCancel: () => this.scene.start(SceneKeys.MainMenu),
     });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.menuInput?.destroy();
+      this.menuInput = undefined;
+    });
+  }
+
+  private moveSelection(delta: number): void {
+    if (this.slots.length === 0) {
+      return;
+    }
+
+    this.selectedIndex = (this.selectedIndex + delta + this.slots.length) % this.slots.length;
+    this.refreshSlotView();
   }
 
   private refreshSlotView(): void {
@@ -114,7 +102,7 @@ export class LoadGameScene extends Phaser.Scene {
   }
 
   private loadSelectedSlot(): void {
-    if (this.hasTransitioned) {
+    if (this.hasTransitioned || this.slots.length === 0) {
       return;
     }
 

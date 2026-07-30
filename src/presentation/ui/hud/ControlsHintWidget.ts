@@ -4,7 +4,7 @@ import type { HudWidget } from './HudWidget';
 import { HUD_DEPTH } from './hud-layout';
 
 const CONTROLS_HINT_TEXT =
-  'A/D or arrows — move, Space — jump, Shift/L — dash (Lv.2+), J/X — attack, Esc — pause, I/K/C/U/M — character menu';
+  'KB: A/D or arrows — move, Space — jump, Shift/L — dash, J/X — attack, Esc — pause, I/K/C/U/M — character menu | Pad: stick/D-pad — move, A — jump, Y — dash, X — attack, Start — pause, Back — character menu, LB/RB — tabs';
 
 const DEFAULT_STYLE = {
   color: '#e2e8f0',

@@ -137,6 +137,11 @@ The game MUST continue showing movement/control hints during gameplay as a separ
 - **WHEN** control hints are displayed during gameplay
 - **THEN** the hint MUST document character menu tab hotkeys (`I`, `K`, `C`, `U`, `M`)
 
+#### Scenario: Gamepad hint text
+
+- **WHEN** control hints are displayed during gameplay
+- **THEN** the hint MUST document primary gamepad controls (stick/D-pad move, A jump, Start pause, Back character menu) in addition to keyboard bindings
+
 #### Scenario: Pause hint text
 
 - **WHEN** control hints are displayed during gameplay

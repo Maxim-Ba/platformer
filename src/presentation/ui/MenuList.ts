@@ -1,5 +1,6 @@
 import type { AppDependencies } from '@game/composition-root';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
+import { createMenuInputHandler } from '@presentation/input/createMenuInputHandler';
 import Phaser from 'phaser';
 
 export interface MenuListItem {
@@ -56,15 +57,6 @@ export function createMenuList(
 
   updateHighlight();
 
-  const keyboard = scene.input.keyboard;
-  if (!keyboard) {
-    return {
-      destroy: () => {
-        labels.forEach((label) => label.destroy());
-      },
-    };
-  }
-
   const moveSelection = (delta: number): void => {
     if (items.length === 0) {
       return;
@@ -83,33 +75,15 @@ export function createMenuList(
     options.onSelect(item, selectedIndex);
   };
 
-  const onKeyDown = (event: KeyboardEvent): void => {
-    if (event.code === 'ArrowUp') {
-      event.preventDefault();
-      moveSelection(-1);
-      return;
-    }
-
-    if (event.code === 'ArrowDown') {
-      event.preventDefault();
-      moveSelection(1);
-      return;
-    }
-
-    if (event.code === 'Enter' || event.code === 'NumpadEnter' || event.code === 'Space') {
-      event.preventDefault();
-      confirmSelection();
-    }
-  };
-
-  window.addEventListener('keydown', onKeyDown);
-  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-    window.removeEventListener('keydown', onKeyDown);
+  const menuInput = createMenuInputHandler(scene, {
+    onUp: () => moveSelection(-1),
+    onDown: () => moveSelection(1),
+    onConfirm: confirmSelection,
   });
 
   return {
     destroy: () => {
-      window.removeEventListener('keydown', onKeyDown);
+      menuInput.destroy();
       labels.forEach((label) => label.destroy());
     },
   };

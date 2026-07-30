@@ -9,6 +9,7 @@ import {
 import { createMockTabPanel } from '@presentation/ui/character-menu/MockTabPanels';
 import { createSkillsTabPanel } from '@presentation/ui/character-menu/SkillsTabPanel';
 import { createStatsTabPanel } from '@presentation/ui/character-menu/StatsTabPanel';
+import { createMenuInputHandler } from '@presentation/input/createMenuInputHandler';
 import { HUD_DEPTH } from '@presentation/ui/hud/hud-layout';
 import { createTabBar } from '@presentation/ui/TabBar';
 import Phaser from 'phaser';
@@ -167,18 +168,12 @@ export function createCharacterMenuOverlay(
         return;
       }
     }
-
-    if (event.code === 'ArrowLeft') {
-      event.preventDefault();
-      moveTab(-1);
-      return;
-    }
-
-    if (event.code === 'ArrowRight') {
-      event.preventDefault();
-      moveTab(1);
-    }
   };
+
+  const menuInput = createMenuInputHandler(scene, {
+    onLeft: () => moveTab(-1),
+    onRight: () => moveTab(1),
+  });
 
   window.addEventListener('keydown', onKeyDown);
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -191,6 +186,7 @@ export function createCharacterMenuOverlay(
     setActiveTab,
     getActiveTab: () => activeTabId,
     destroy: () => {
+      menuInput.destroy();
       window.removeEventListener('keydown', onKeyDown);
       tabBar.destroy();
       tabPanels.forEach((panel) => panel.destroy());

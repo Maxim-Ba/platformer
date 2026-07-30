@@ -44,7 +44,9 @@ import { LocalStorageSaveAdapter } from '@infrastructure/adapters/LocalStorageSa
 import { LocalStorageSettingsAdapter } from '@infrastructure/adapters/LocalStorageSettingsAdapter';
 import { LevelCollisionResolver } from '@infrastructure/phaser/LevelCollisionResolver';
 import { TiledLevelRepository } from '@infrastructure/tiled/TiledLevelRepository';
-import { PhaserInputAdapter } from '@infrastructure/phaser/PhaserInputAdapter';
+import { CompositeInputAdapter } from '@infrastructure/phaser/CompositeInputAdapter';
+import { PhaserGamepadReader } from '@infrastructure/phaser/PhaserGamepadReader';
+import { PhaserKeyboardInputAdapter } from '@infrastructure/phaser/PhaserKeyboardInputAdapter';
 import { PhaserPhysicsAdapter } from '@infrastructure/phaser/PhaserPhysicsAdapter';
 import { PhaserSmoothCameraAdapter } from '@infrastructure/phaser/PhaserSmoothCameraAdapter';
 import type Phaser from 'phaser';
@@ -75,6 +77,7 @@ export interface AppDependencies {
 
 export interface SceneDependencies {
   inputPort: IInputPort;
+  gamepadReader: PhaserGamepadReader;
   physicsPort: IPhysicsPort;
   cameraPort: ICameraPort;
   healthPort: IHealthPort;
@@ -187,8 +190,12 @@ export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies 
   const progressionPort = createProgressionPort();
   const applyDamage = new ApplyDamage(healthPort);
 
+  const gamepadReader = new PhaserGamepadReader(scene);
+  const keyboardInput = new PhaserKeyboardInputAdapter(scene);
+
   return {
-    inputPort: new PhaserInputAdapter(scene),
+    inputPort: new CompositeInputAdapter(keyboardInput, gamepadReader),
+    gamepadReader,
     physicsPort: new PhaserPhysicsAdapter(scene),
     cameraPort: new PhaserSmoothCameraAdapter(scene.cameras.main),
     healthPort,
