@@ -49,6 +49,27 @@ npm test
 npm run lint
 ```
 
+## Validate maps
+
+Проверка Tiled JSON в `public/assets/maps/` (parse, двери, слои, граф мира):
+
+```bash
+npm run validate:maps
+```
+
+Запускайте после экспорта карт или правок `world-graph.ts`. Exit code `1` при errors; warnings не блокируют.
+
+## Quality gate
+
+Перед коммитом изменений в карты или игровой код:
+
+```bash
+npm run validate:maps
+npm run test
+npm run lint
+npm run build
+```
+
 ## Project structure
 
 ```
@@ -178,6 +199,7 @@ Game → Level Complete (победа: выход level_exit)
 4. Экспорт: **File → Export As…** → JSON → сохранить как `public/assets/maps/level-01.json`.
 5. Тайлсет: PNG в `public/assets/tilesets/platformer-tiles.png` (источник — `tiled/tilesets/`).
 6. Проверка: `npm run dev` → Main Menu → уровень загружается из `assets/maps/level-01.json`.
+7. Валидация: `npm run validate:maps` — проверка parse, слоёв, дверей и графа мира (см. [level-authoring.md](docs/level-authoring.md#валидация-карт-npm-runvalidatemaps)).
 
 При добавлении нового уровня: экспортируйте `level-02.json` и передайте `levelId` в `GameScene` (см. `DEFAULT_LEVEL_ID` в `src/game/constants.ts`).
 

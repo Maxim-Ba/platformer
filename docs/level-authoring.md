@@ -221,6 +221,45 @@ this.load.tilemapTiledJSON(mapCacheKey(this.levelId), `assets/maps/${this.levelI
 - [ ] Коллизионные тайлы помечены `solid: true`.
 - [ ] `levelId` добавлен в `LEVEL_PROGRESSION`, если нужен в кампании.
 - [ ] Playtest: spawn, прыжки, hazard, checkpoint, враги, выход.
+- [ ] После правок карт или дверей: `npm run validate:maps` (см. раздел ниже).
+
+---
+
+## Валидация карт (`npm run validate:maps`)
+
+После экспорта или ручного редактирования `public/assets/maps/*.json` запустите:
+
+```bash
+npm run validate:maps
+```
+
+Команда парсит все JSON через `TiledLevelRepository.parseMap` и проверяет 6 правил:
+
+| # | Правило | Severity |
+|---|---------|----------|
+| 1 | Успешный parse (слой `objects`, ровно один `player_spawn`) | error |
+| 2 | Уникальность `doorId` внутри комнаты | error |
+| 3 | `targetRoom.json` существует и содержит `targetDoor` | error |
+| 4 | Обратная парность дверей A↔B | warning |
+| 5 | Слои `ground`, `decor`, `objects` и тайлсеты `platformer`, `beast_soldier` | error |
+| 6 | Комнаты из `WORLD_GRAPH` и `WORLD_ENTRY_ROOM_ID` имеют JSON-файлы | error |
+
+**Errors** — exit code `1`, карту нельзя считать готовой к playtest. **Warnings** — exit code `0`, но их стоит исправить до merge (например, односторонняя дверь или `room-*.json` не в `WORLD_GRAPH`).
+
+Legacy-уровни вроде `level-01.json`, не входящие в `WORLD_GRAPH`, не считаются ошибкой.
+
+Пример вывода:
+
+```
+✓ room-a.json
+✗ room-b.json
+  ERROR: duplicate doorId "to-b" in room-b
+  WARNING: door "room-b/from-a" → "room-a/to-b" has no reverse pair
+
+Validated 4 maps: 3 passed, 1 failed (1 error, 1 warning)
+```
+
+Когда запускать: после каждого экспорта из Tiled, после правок `src/game/world-graph.ts`, перед коммитом изменений в `public/assets/maps/`.
 
 ---
 
