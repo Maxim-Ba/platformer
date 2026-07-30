@@ -303,6 +303,7 @@ export class GameScene extends Phaser.Scene {
       manaPort: this.deps.manaPort,
       energyPort: this.deps.energyPort,
       progressionPort: appDependencies.progressionPort,
+      skillsPort: appDependencies.skillsPort,
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -338,7 +339,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (!this.characterMenuOverlay) {
-      this.characterMenuOverlay = createCharacterMenuOverlay(this);
+      const appDependencies = getAppDependenciesFromRegistry(this);
+      this.characterMenuOverlay = createCharacterMenuOverlay(this, {
+        statsPort: appDependencies.playerStatsPort,
+        skillsPort: appDependencies.skillsPort,
+      });
     }
 
     this.characterMenuOverlay.setActiveTab(tabId);

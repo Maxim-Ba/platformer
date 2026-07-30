@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SAVE_SLOT_ID } from '@domain/constants/save';
 import { DEFAULT_LEVEL_ID } from '@game/constants';
+import { MOCK_DEFAULT_SKILL_POINTS } from '@domain/constants/skill-trees';
 import { InMemoryInventoryAdapter } from '@infrastructure/adapters/InMemoryInventoryAdapter';
 import { InMemoryProgressionAdapter } from '@infrastructure/adapters/InMemoryProgressionAdapter';
+import { InMemorySkillsAdapter } from '@infrastructure/adapters/InMemorySkillsAdapter';
 import { LocalStorageSaveAdapter } from '@infrastructure/adapters/LocalStorageSaveAdapter';
 
 import { AddExperience } from './AddExperience';
@@ -35,19 +37,24 @@ describe('save/load use cases', () => {
   it('StartNewGame resets progression and inventory', () => {
     const progressionPort = new InMemoryProgressionAdapter();
     const inventoryPort = new InMemoryInventoryAdapter();
+    const skillsPort = new InMemorySkillsAdapter();
     const addExperience = new AddExperience(progressionPort);
     const addItem = new AddItem(inventoryPort);
 
     addExperience.execute(100);
     addItem.execute({ id: 'coin-1', type: 'coin', quantity: 3 });
+    skillsPort.learnNode('physical-l2-0');
+    skillsPort.selectNode('physical-l2-0');
 
-    const useCase = new StartNewGame(progressionPort, inventoryPort);
+    const useCase = new StartNewGame(progressionPort, inventoryPort, skillsPort);
     const result = useCase.execute();
 
     expect(result.levelId).toBe(DEFAULT_LEVEL_ID);
     expect(progressionPort.getProgression().experience).toBe(0);
     expect(progressionPort.getProgression().level).toBe(1);
     expect(inventoryPort.getInventory().slots.every((slot) => slot === null)).toBe(true);
+    expect(skillsPort.getAvailableSkillPoints()).toBe(MOCK_DEFAULT_SKILL_POINTS);
+    expect(skillsPort.getSelectedNodeIds()).toEqual([]);
   });
 
   it('SaveGame persists progression and inventory snapshot', () => {

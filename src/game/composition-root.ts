@@ -9,8 +9,10 @@ import type { IInputPort } from '@application/ports/IInputPort';
 import type { IInventoryPort } from '@application/ports/IInventoryPort';
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
 import type { IPhysicsPort } from '@application/ports/IPhysicsPort';
+import type { IPlayerStatsPort } from '@application/ports/IPlayerStatsPort';
 import type { IProgressionPort } from '@application/ports/IProgressionPort';
 import type { ISavePort } from '@application/ports/ISavePort';
+import type { ISkillsPort } from '@application/ports/ISkillsPort';
 import { AddExperience } from '@application/use-cases/AddExperience';
 import { AddItem } from '@application/use-cases/AddItem';
 import { ApplyDamage } from '@application/use-cases/ApplyDamage';
@@ -35,7 +37,9 @@ import { InMemoryEnemyAdapter } from '@infrastructure/adapters/InMemoryEnemyAdap
 import { InMemoryHealthAdapter } from '@infrastructure/adapters/InMemoryHealthAdapter';
 import { InMemoryManaAdapter } from '@infrastructure/adapters/InMemoryManaAdapter';
 import { InMemoryInventoryAdapter } from '@infrastructure/adapters/InMemoryInventoryAdapter';
+import { InMemoryPlayerStatsAdapter } from '@infrastructure/adapters/InMemoryPlayerStatsAdapter';
 import { InMemoryProgressionAdapter } from '@infrastructure/adapters/InMemoryProgressionAdapter';
+import { InMemorySkillsAdapter } from '@infrastructure/adapters/InMemorySkillsAdapter';
 import { LocalStorageSaveAdapter } from '@infrastructure/adapters/LocalStorageSaveAdapter';
 import { LocalStorageSettingsAdapter } from '@infrastructure/adapters/LocalStorageSettingsAdapter';
 import { LevelCollisionResolver } from '@infrastructure/phaser/LevelCollisionResolver';
@@ -54,6 +58,8 @@ export interface AppDependencies {
   settingsPort: ISettingsPort;
   updateSettings: UpdateSettings;
   progressionPort: IProgressionPort;
+  playerStatsPort: IPlayerStatsPort;
+  skillsPort: ISkillsPort;
   addExperience: AddExperience;
   inventoryPort: IInventoryPort;
   addItem: AddItem;
@@ -117,6 +123,8 @@ function createEnemyPort(): IEnemyPort {
 
 let settingsPortSingleton: ISettingsPort | undefined;
 let progressionPortSingleton: IProgressionPort | undefined;
+let playerStatsPortSingleton: IPlayerStatsPort | undefined;
+let skillsPortSingleton: ISkillsPort | undefined;
 let inventoryPortSingleton: IInventoryPort | undefined;
 let savePortSingleton: ISavePort | undefined;
 
@@ -134,6 +142,22 @@ function createProgressionPort(): IProgressionPort {
   }
 
   return progressionPortSingleton;
+}
+
+function createPlayerStatsPort(): IPlayerStatsPort {
+  if (!playerStatsPortSingleton) {
+    playerStatsPortSingleton = new InMemoryPlayerStatsAdapter();
+  }
+
+  return playerStatsPortSingleton;
+}
+
+function createSkillsPort(): ISkillsPort {
+  if (!skillsPortSingleton) {
+    skillsPortSingleton = new InMemorySkillsAdapter();
+  }
+
+  return skillsPortSingleton;
 }
 
 function createInventoryPort(): IInventoryPort {
@@ -188,6 +212,8 @@ export function createAppDependencies(): AppDependencies {
   const levelRepository = createLevelRepository();
   const settingsPort = createSettingsPort();
   const progressionPort = createProgressionPort();
+  const playerStatsPort = createPlayerStatsPort();
+  const skillsPort = createSkillsPort();
   const inventoryPort = createInventoryPort();
   const savePort = createSavePort();
 
@@ -197,13 +223,15 @@ export function createAppDependencies(): AppDependencies {
     settingsPort,
     updateSettings: new UpdateSettings(settingsPort),
     progressionPort,
+    playerStatsPort,
+    skillsPort,
     addExperience: new AddExperience(progressionPort),
     inventoryPort,
     addItem: new AddItem(inventoryPort),
     removeItem: new RemoveItem(inventoryPort),
     useItem: new UseItem(inventoryPort),
     savePort,
-    startNewGame: new StartNewGame(progressionPort, inventoryPort),
+    startNewGame: new StartNewGame(progressionPort, inventoryPort, skillsPort),
     saveGame: new SaveGame(savePort, progressionPort, inventoryPort),
     loadGame: new LoadGame(savePort, progressionPort, inventoryPort),
     listSaveSlots: new ListSaveSlots(savePort),

@@ -2,6 +2,7 @@ import type { IEnergyPort } from '@application/ports/IEnergyPort';
 import type { IHealthPort } from '@application/ports/IHealthPort';
 import type { IManaPort } from '@application/ports/IManaPort';
 import type { IProgressionPort } from '@application/ports/IProgressionPort';
+import type { ISkillsPort } from '@application/ports/ISkillsPort';
 import type Phaser from 'phaser';
 
 import { createControlsHintWidget } from './ControlsHintWidget';
@@ -9,12 +10,14 @@ import type { HudWidget } from './HudWidget';
 import { HUD_LAYOUT, resolveHudPosition } from './hud-layout';
 import { createResourceHudWidget } from './ResourceHudWidget';
 import { createScoreHudWidget } from './ScoreHudWidget';
+import { createSelectedSkillsHudWidget } from './SelectedSkillsHudWidget';
 
 export interface GameHudDependencies {
   healthPort: IHealthPort;
   manaPort: IManaPort;
   energyPort: IEnergyPort;
   progressionPort: IProgressionPort;
+  skillsPort: ISkillsPort;
 }
 
 export interface GameHud {
@@ -65,8 +68,11 @@ export function createGameHud(scene: Phaser.Scene, deps: GameHudDependencies): G
     }),
   ];
   const scoreWidget = createScoreHudWidget(scene, deps.progressionPort);
+  const selectedSkillsWidget = createSelectedSkillsHudWidget(scene, {
+    skillsPort: deps.skillsPort,
+  });
 
-  const widgets: HudWidget[] = [controlsWidget, ...resourceWidgets, scoreWidget];
+  const widgets: HudWidget[] = [controlsWidget, ...resourceWidgets, scoreWidget, selectedSkillsWidget];
 
   const relayout = (): void => {
     const controlsPosition = resolveHudPosition(
@@ -84,6 +90,13 @@ export function createGameHud(scene: Phaser.Scene, deps: GameHudDependencies): G
       HUD_LAYOUT.score.y,
     );
     scoreWidget.setPosition(scorePosition.x, scorePosition.y);
+    const selectedSkillsPosition = resolveHudPosition(
+      scene,
+      HUD_LAYOUT.selectedSkills.anchor,
+      HUD_LAYOUT.selectedSkills.x,
+      HUD_LAYOUT.selectedSkills.y,
+    );
+    selectedSkillsWidget.setPosition(selectedSkillsPosition.x, selectedSkillsPosition.y);
   };
 
   relayout();

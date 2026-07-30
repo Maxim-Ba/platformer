@@ -8,6 +8,7 @@ export const HUD_LAYOUT = {
   resources: { anchor: 'bottom-left' as const, x: 24, y: -24, lineHeight: 32 },
   score: { anchor: 'top-right' as const, x: -24, y: 24 },
   controls: { anchor: 'top-left' as const, x: 24, y: 24 },
+  selectedSkills: { anchor: 'bottom-right' as const, x: -24, y: -24, lineHeight: 28 },
 } as const;
 
 export function resolveHudPosition(

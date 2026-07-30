@@ -1,10 +1,8 @@
 import type { CharacterMenuTabId } from '@game/character-menu-config';
 import Phaser from 'phaser';
 
-const MOCK_CONTENT: Record<CharacterMenuTabId, string> = {
+const MOCK_CONTENT: Record<Exclude<CharacterMenuTabId, 'stats' | 'skills'>, string> = {
   inventory: '[ Инвентарь ]\n\nСлоты предметов появятся здесь.\n(заглушка)',
-  skills: '[ Скилы ]\n\nДерево навыков появится здесь.\n(заглушка)',
-  stats: '[ Характеристики ]\n\nСила, ловкость, выносливость...\n(заглушка)',
   abilities: '[ Активные умения ]\n\nПанель умений появится здесь.\n(заглушка)',
   map: '[ Карта ]\n\nМини-карта уровня появится здесь.\n(заглушка)',
 };
@@ -18,7 +16,7 @@ const PANEL_STYLE = {
 
 export function createMockTabPanel(
   scene: Phaser.Scene,
-  tabId: CharacterMenuTabId,
+  tabId: Exclude<CharacterMenuTabId, 'stats' | 'skills'>,
   x: number,
   y: number,
   width: number,

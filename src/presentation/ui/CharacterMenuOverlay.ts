@@ -1,11 +1,15 @@
+import type { IPlayerStatsPort } from '@application/ports/IPlayerStatsPort';
+import type { ISkillsPort } from '@application/ports/ISkillsPort';
 import {
   CHARACTER_MENU_TABS,
   getTabByIndex,
   getTabIndex,
   type CharacterMenuTabId,
 } from '@game/character-menu-config';
-import { HUD_DEPTH } from '@presentation/ui/hud/hud-layout';
 import { createMockTabPanel } from '@presentation/ui/character-menu/MockTabPanels';
+import { createSkillsTabPanel } from '@presentation/ui/character-menu/SkillsTabPanel';
+import { createStatsTabPanel } from '@presentation/ui/character-menu/StatsTabPanel';
+import { HUD_DEPTH } from '@presentation/ui/hud/hud-layout';
 import { createTabBar } from '@presentation/ui/TabBar';
 import Phaser from 'phaser';
 
@@ -20,13 +24,28 @@ const TAB_BAR_HEIGHT = 48;
 const CONTENT_PADDING = 32;
 const TAB_BAR_DEPTH = CHARACTER_MENU_DEPTH + 2;
 
+interface TabPanelHandle {
+  setVisible: (visible: boolean) => void;
+  handleKeyDown?: (event: KeyboardEvent) => boolean;
+  destroy: () => void;
+}
+
 export interface CharacterMenuOverlay {
   setActiveTab: (tabId: CharacterMenuTabId) => void;
   getActiveTab: () => CharacterMenuTabId;
   destroy: () => void;
 }
 
-export function createCharacterMenuOverlay(scene: Phaser.Scene): CharacterMenuOverlay {
+export interface CharacterMenuOverlayOptions {
+  statsPort: IPlayerStatsPort;
+  skillsPort: ISkillsPort;
+}
+
+export function createCharacterMenuOverlay(
+  scene: Phaser.Scene,
+  options: CharacterMenuOverlayOptions,
+): CharacterMenuOverlay {
+  const { statsPort, skillsPort } = options;
   const { width, height } = scene.scale;
   const panelX = (width - PANEL_WIDTH) / 2;
   const panelY = (height - PANEL_HEIGHT) / 2;
@@ -57,8 +76,39 @@ export function createCharacterMenuOverlay(scene: Phaser.Scene): CharacterMenuOv
 
   gameObjects.push(dim, panel, title);
 
-  const tabPanels = new Map<CharacterMenuTabId, Phaser.GameObjects.Text>();
+  const tabPanels = new Map<CharacterMenuTabId, TabPanelHandle>();
+
   for (const tab of CHARACTER_MENU_TABS) {
+    if (tab.id === 'stats') {
+      const statsPanel = createStatsTabPanel(
+        scene,
+        statsPort,
+        panelX + CONTENT_PADDING,
+        contentY,
+        contentWidth,
+        contentHeight,
+        TAB_BAR_DEPTH,
+      );
+      statsPanel.setVisible(false);
+      tabPanels.set(tab.id, statsPanel);
+      continue;
+    }
+
+    if (tab.id === 'skills') {
+      const skillsPanel = createSkillsTabPanel(
+        scene,
+        skillsPort,
+        panelX + CONTENT_PADDING,
+        contentY,
+        contentWidth,
+        contentHeight,
+        TAB_BAR_DEPTH,
+      );
+      skillsPanel.setVisible(false);
+      tabPanels.set(tab.id, skillsPanel);
+      continue;
+    }
+
     const mockPanel = createMockTabPanel(
       scene,
       tab.id,
@@ -68,8 +118,10 @@ export function createCharacterMenuOverlay(scene: Phaser.Scene): CharacterMenuOv
       contentHeight,
     );
     mockPanel.setScrollFactor(0).setDepth(TAB_BAR_DEPTH).setVisible(false);
-    tabPanels.set(tab.id, mockPanel);
-    gameObjects.push(mockPanel);
+    tabPanels.set(tab.id, {
+      setVisible: (visible) => mockPanel.setVisible(visible),
+      destroy: () => mockPanel.destroy(),
+    });
   }
 
   let activeTabId: CharacterMenuTabId = CHARACTER_MENU_TABS[0]!.id;
@@ -109,6 +161,13 @@ export function createCharacterMenuOverlay(scene: Phaser.Scene): CharacterMenuOv
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
+    if (activeTabId === 'skills') {
+      const skillsPanel = tabPanels.get('skills');
+      if (skillsPanel?.handleKeyDown?.(event)) {
+        return;
+      }
+    }
+
     if (event.code === 'ArrowLeft') {
       event.preventDefault();
       moveTab(-1);
@@ -134,6 +193,7 @@ export function createCharacterMenuOverlay(scene: Phaser.Scene): CharacterMenuOv
     destroy: () => {
       window.removeEventListener('keydown', onKeyDown);
       tabBar.destroy();
+      tabPanels.forEach((panel) => panel.destroy());
       gameObjects.forEach((object) => object.destroy());
     },
   };
