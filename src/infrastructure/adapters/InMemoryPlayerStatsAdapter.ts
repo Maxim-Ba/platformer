@@ -4,8 +4,8 @@ import {
   MAX_ATTRIBUTE_VALUE,
   MIN_ATTRIBUTE_VALUE,
   PlayerAttributes,
+  PlayerStatsState,
   type AttributeId,
-  type PlayerStatsState,
 } from '@domain/types/player-stats';
 
 const MOCK_UNALLOCATED_POINTS = 3;
@@ -25,6 +25,10 @@ export class InMemoryPlayerStatsAdapter implements IPlayerStatsPort {
 
   getDerivedStats() {
     return this.rules.computeDerived(this.attributes);
+  }
+
+  getState(): PlayerStatsState {
+    return new PlayerStatsState(this.attributes, this.unallocatedPoints);
   }
 
   increaseAttribute(id: AttributeId): boolean {

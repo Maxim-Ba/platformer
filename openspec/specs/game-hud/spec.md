@@ -135,7 +135,7 @@ The game MUST continue showing movement/control hints during gameplay as a separ
 #### Scenario: Character menu hotkeys documented
 
 - **WHEN** control hints are displayed during gameplay
-- **THEN** the hint MUST document character menu tab hotkeys (`I`, `K`, `C`, `U`, `M`)
+- **THEN** the hint MUST document current character menu tab key bindings from settings
 
 #### Scenario: Gamepad hint text
 
@@ -145,4 +145,9 @@ The game MUST continue showing movement/control hints during gameplay as a separ
 #### Scenario: Pause hint text
 
 - **WHEN** control hints are displayed during gameplay
-- **THEN** the hint MUST document Escape as opening pause, not as triggering game over
+- **THEN** the hint MUST document the current `pause` key binding as opening pause, not as triggering game over
+
+#### Scenario: Rebound keys reflected
+
+- **WHEN** player changes key bindings in settings and returns to gameplay
+- **THEN** control hints MUST reflect the updated bindings without requiring a page reload

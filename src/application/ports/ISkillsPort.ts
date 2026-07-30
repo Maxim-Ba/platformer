@@ -1,4 +1,5 @@
 import type { SkillTreeDefinition } from '@domain/types/SkillTree';
+import type { SkillsState } from '@domain/value-objects/SkillsState';
 
 export interface ISkillsPort {
   getTrees(): readonly SkillTreeDefinition[];
@@ -11,5 +12,7 @@ export interface ISkillsPort {
   selectNode(nodeId: string): boolean;
   deselectNode(nodeId: string): boolean;
   isNodeUnlocked(nodeId: string): boolean;
+  getState(): SkillsState;
+  restoreState(state: SkillsState): void;
   reset(): void;
 }

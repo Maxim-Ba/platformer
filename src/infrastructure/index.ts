@@ -4,6 +4,7 @@ export { PlaceholderLevelRepository } from './adapters/PlaceholderLevelRepositor
 export { InMemoryHealthAdapter } from './adapters/InMemoryHealthAdapter';
 export { InMemoryDashAdapter } from './adapters/InMemoryDashAdapter';
 export { LocalStorageSettingsAdapter } from './adapters/LocalStorageSettingsAdapter';
+export { JsonFileSaveAdapter } from './adapters/JsonFileSaveAdapter';
 export { LocalStorageSaveAdapter } from './adapters/LocalStorageSaveAdapter';
 export { InMemoryProgressionAdapter } from './adapters/InMemoryProgressionAdapter';
 export { InMemoryInventoryAdapter } from './adapters/InMemoryInventoryAdapter';

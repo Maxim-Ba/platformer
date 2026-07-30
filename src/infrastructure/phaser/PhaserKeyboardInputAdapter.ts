@@ -1,36 +1,35 @@
 import type { IInputPort } from '@application/ports/IInputPort';
+import type { GameSettings } from '@domain/types/GameSettings';
+import type { InputActionId } from '@domain/types/InputActionId';
+import { normalizeKeyCodes } from '@domain/utils/normalizeKeyCodes';
 import Phaser from 'phaser';
+
+import { keyboardEventCodeToPhaserKeyCode } from './keyboardEventCodeToPhaserKeyCode';
 
 function isShiftKeyCode(code: string): boolean {
   return code === 'ShiftLeft' || code === 'ShiftRight';
 }
 
 export class PhaserKeyboardInputAdapter implements IInputPort {
-  private readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  private readonly keyA: Phaser.Input.Keyboard.Key;
-  private readonly keyD: Phaser.Input.Keyboard.Key;
-  private readonly keySpace: Phaser.Input.Keyboard.Key;
-  private readonly keyJ: Phaser.Input.Keyboard.Key;
-  private readonly keyX: Phaser.Input.Keyboard.Key;
-  private readonly keyL: Phaser.Input.Keyboard.Key;
+  private readonly keyboard: Phaser.Input.Keyboard.KeyboardPlugin;
+  private readonly keyCache = new Map<string, Phaser.Input.Keyboard.Key>();
   private dashQueued = false;
 
-  constructor(scene: Phaser.Scene) {
+  constructor(
+    scene: Phaser.Scene,
+    private readonly getControls: () => GameSettings['controls'],
+  ) {
     const keyboard = scene.input.keyboard;
     if (!keyboard) {
       throw new Error('PhaserKeyboardInputAdapter requires a keyboard-enabled scene.');
     }
 
-    this.cursors = keyboard.createCursorKeys();
-    this.keyA = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-    this.keyD = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-    this.keySpace = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.keyJ = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.J);
-    this.keyX = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
-    this.keyL = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
+    this.keyboard = keyboard;
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (isShiftKeyCode(event.code)) {
+      const dashCodes = normalizeKeyCodes(this.getControls().keyBindings.dash);
+
+      if (dashCodes.includes(event.code) && isShiftKeyCode(event.code)) {
         this.dashQueued = true;
       }
     };
@@ -42,29 +41,60 @@ export class PhaserKeyboardInputAdapter implements IInputPort {
   }
 
   isLeftPressed(): boolean {
-    return this.cursors.left.isDown || this.keyA.isDown;
+    return this.isAnyDown('moveLeft');
   }
 
   isRightPressed(): boolean {
-    return this.cursors.right.isDown || this.keyD.isDown;
+    return this.isAnyDown('moveRight');
   }
 
   isJumpPressed(): boolean {
-    return Phaser.Input.Keyboard.JustDown(this.keySpace);
+    return this.isAnyJustDown('jump');
   }
 
   isAttackPressed(): boolean {
-    return (
-      Phaser.Input.Keyboard.JustDown(this.keyJ) || Phaser.Input.Keyboard.JustDown(this.keyX)
-    );
+    return this.isAnyJustDown('attack');
   }
 
   isDashPressed(): boolean {
-    const shiftPressed = this.dashQueued;
-    const alternatePressed = Phaser.Input.Keyboard.JustDown(this.keyL);
-
+    const dashCodes = normalizeKeyCodes(this.getControls().keyBindings.dash);
+    const hasShiftBinding = dashCodes.some((code) => isShiftKeyCode(code));
+    const shiftPressed = this.dashQueued && hasShiftBinding;
     this.dashQueued = false;
 
+    const alternatePressed = dashCodes.some(
+      (code) => !isShiftKeyCode(code) && this.isCodeJustDown(code),
+    );
+
     return shiftPressed || alternatePressed;
+  }
+
+  private isAnyDown(action: InputActionId): boolean {
+    const codes = normalizeKeyCodes(this.getControls().keyBindings[action]);
+    return codes.some((code) => this.isCodeDown(code));
+  }
+
+  private isAnyJustDown(action: InputActionId): boolean {
+    const codes = normalizeKeyCodes(this.getControls().keyBindings[action]);
+    return codes.some((code) => this.isCodeJustDown(code));
+  }
+
+  private getKey(code: string): Phaser.Input.Keyboard.Key {
+    let key = this.keyCache.get(code);
+
+    if (!key) {
+      key = this.keyboard.addKey(keyboardEventCodeToPhaserKeyCode(code));
+      this.keyCache.set(code, key);
+    }
+
+    return key;
+  }
+
+  private isCodeDown(code: string): boolean {
+    return this.getKey(code).isDown;
+  }
+
+  private isCodeJustDown(code: string): boolean {
+    return Phaser.Input.Keyboard.JustDown(this.getKey(code));
   }
 }

@@ -3,6 +3,7 @@ import type { IHealthPort } from '@application/ports/IHealthPort';
 import type { IManaPort } from '@application/ports/IManaPort';
 import type { IProgressionPort } from '@application/ports/IProgressionPort';
 import type { ISkillsPort } from '@application/ports/ISkillsPort';
+import type { GameSettings } from '@domain/types/GameSettings';
 import type Phaser from 'phaser';
 
 import { createControlsHintWidget } from './ControlsHintWidget';
@@ -18,6 +19,7 @@ export interface GameHudDependencies {
   energyPort: IEnergyPort;
   progressionPort: IProgressionPort;
   skillsPort: ISkillsPort;
+  getControls: () => GameSettings['controls'];
 }
 
 export interface GameHud {
@@ -46,7 +48,7 @@ function positionWidgets(
 }
 
 export function createGameHud(scene: Phaser.Scene, deps: GameHudDependencies): GameHud {
-  const controlsWidget = createControlsHintWidget(scene);
+  const controlsWidget = createControlsHintWidget(scene, deps.getControls);
   const resourceWidgets = [
     createResourceHudWidget(scene, {
       id: 'health',

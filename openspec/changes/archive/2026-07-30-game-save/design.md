@@ -22,6 +22,7 @@
 - Реальная файловая система / Electron / облако
 - Экспорт «Скачать .json» и импорт через file picker
 - Сохранение настроек (`game-settings`) внутри `GameSave`
+- Ребиндинг управления — отдельный change `control-rebinding` через `ISettingsPort` (`platformer:settings`)
 
 ## Decisions
 

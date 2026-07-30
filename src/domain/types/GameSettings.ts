@@ -1,3 +1,6 @@
+import type { GamepadBinding } from './GamepadBinding';
+import type { InputActionId } from './InputActionId';
+
 export interface GameSettings {
   audio: {
     masterVolume: number;
@@ -8,7 +11,8 @@ export interface GameSettings {
     fullscreen: boolean;
   };
   controls: {
-    keyBindings: Record<string, string>;
+    keyBindings: Record<InputActionId, string | string[]>;
+    gamepadBindings?: Partial<Record<InputActionId, GamepadBinding | GamepadBinding[]>>;
   };
   cosmetics: {
     playerSkinId: string;

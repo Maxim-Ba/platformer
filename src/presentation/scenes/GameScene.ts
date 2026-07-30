@@ -10,12 +10,12 @@ import { DEFAULT_SAVE_SLOT_ID } from '@domain/constants/save';
 import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
+import type { InputActionId } from '@domain/types/InputActionId';
 import { AssetKeys, BEAST_SOLDIER_TILESET_PATH } from '@game/asset-keys';
 import {
   CHARACTER_MENU_TABS,
   getTabByIndex,
   getTabIndex,
-  type CharacterMenuTabDefinition,
   type CharacterMenuTabId,
 } from '@game/character-menu-config';
 import { GAMEPAD_BUTTON } from '@game/gamepad-bindings';
@@ -36,12 +36,21 @@ import {
   createPauseMenuOverlay,
   type PauseMenuOverlay,
 } from '@presentation/ui/PauseMenuOverlay';
+import { isActionJustDown } from '@presentation/input/isActionJustDown';
 import Phaser from 'phaser';
 
 const CHECKPOINT_XP_REWARD = 10;
 const RESPAWN_FADE_OUT_MS = 200;
 const RESPAWN_FADE_IN_MS = 300;
 const LEVEL_COMPLETE_FADE_OUT_MS = 200;
+
+const CHAR_MENU_ACTION_BY_TAB: Record<CharacterMenuTabId, InputActionId> = {
+  inventory: 'charMenuInventory',
+  skills: 'charMenuSkills',
+  stats: 'charMenuStats',
+  abilities: 'charMenuUpgrades',
+  map: 'charMenuMap',
+};
 
 function createInputSnapshot(inputPort: IInputPort): InputSnapshot {
   let horizontalAxis: -1 | 0 | 1 = 0;
@@ -72,11 +81,8 @@ export class GameScene extends Phaser.Scene {
   private groundLayer?: Phaser.Tilemaps.TilemapLayer;
   private respawnPosition!: Vector2;
   private activatedCheckpointIds = new Set<string>();
+  private readonly hotkeyCache = new Map<string, Phaser.Input.Keyboard.Key>();
   private keyEsc!: Phaser.Input.Keyboard.Key;
-  private characterMenuKeys: Array<{
-    tab: CharacterMenuTabDefinition;
-    key: Phaser.Input.Keyboard.Key;
-  }> = [];
   private isCharacterMenuOpen = false;
   private lastCharacterMenuTabId: CharacterMenuTabId = 'inventory';
   private characterMenuOverlay?: CharacterMenuOverlay;
@@ -120,7 +126,7 @@ export class GameScene extends Phaser.Scene {
 
     if (this.isPaused) {
       if (
-        Phaser.Input.Keyboard.JustDown(this.keyEsc) ||
+        this.isPausePressed() ||
         this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.START)
       ) {
         this.closePauseMenu();
@@ -138,7 +144,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (
-      Phaser.Input.Keyboard.JustDown(this.keyEsc) ||
+      this.isPausePressed() ||
       this.deps.gamepadReader.wasButtonJustPressed(GAMEPAD_BUTTON.START)
     ) {
       this.openPauseMenu();
@@ -227,10 +233,24 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.keyEsc = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
-    this.characterMenuKeys = CHARACTER_MENU_TABS.map((tab) => ({
-      tab,
-      key: keyboard.addKey(tab.keyCode),
-    }));
+  }
+
+  private isPausePressed(): boolean {
+    const keyboard = this.input.keyboard;
+    if (!keyboard) {
+      return false;
+    }
+
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    const pauseBinding = appDependencies.settingsPort.getSettings().controls.keyBindings.pause;
+
+    return isActionJustDown(keyboard, pauseBinding, this.hotkeyCache);
+  }
+
+  private getCharacterMenuBinding(tabId: CharacterMenuTabId): string | string[] {
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    const actionId = CHAR_MENU_ACTION_BY_TAB[tabId];
+    return appDependencies.settingsPort.getSettings().controls.keyBindings[actionId];
   }
 
   private bindPauseResume(): void {
@@ -242,6 +262,7 @@ export class GameScene extends Phaser.Scene {
       if (!this.pauseMenuOverlay) {
         this.pauseMenuOverlay = createPauseMenuOverlay(this, {
           onSettings: () => this.openSettingsFromPause(),
+          onSave: () => this.saveFromPause(),
           onCheckpoint: () => this.restartFromCheckpoint(),
           onExit: () => this.exitToMainMenu(),
         });
@@ -316,6 +337,7 @@ export class GameScene extends Phaser.Scene {
       energyPort: this.deps.energyPort,
       progressionPort: appDependencies.progressionPort,
       skillsPort: appDependencies.skillsPort,
+      getControls: () => appDependencies.settingsPort.getSettings().controls,
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -361,8 +383,13 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    for (const { tab, key } of this.characterMenuKeys) {
-      if (Phaser.Input.Keyboard.JustDown(key)) {
+    for (const tab of CHARACTER_MENU_TABS) {
+      const keyboard = this.input.keyboard;
+      if (!keyboard) {
+        continue;
+      }
+
+      if (isActionJustDown(keyboard, this.getCharacterMenuBinding(tab.id), this.hotkeyCache)) {
         this.toggleCharacterMenuTab(tab.id);
         return true;
       }
@@ -431,6 +458,7 @@ export class GameScene extends Phaser.Scene {
 
     this.pauseMenuOverlay = createPauseMenuOverlay(this, {
       onSettings: () => this.openSettingsFromPause(),
+      onSave: () => this.saveFromPause(),
       onCheckpoint: () => this.restartFromCheckpoint(),
       onExit: () => this.exitToMainMenu(),
     });
@@ -448,8 +476,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private openSettingsFromPause(): void {
+    // Pause overlay keeps its MenuList input handler alive; Enter/Space would re-launch
+    // Settings and reset selection to Master Volume via SettingsScene.init().
+    this.destroyPauseMenu();
     this.scene.launch(SceneKeys.Settings, { returnScene: SceneKeys.Game });
     this.scene.pause();
+  }
+
+  private saveFromPause(): void {
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    appDependencies.saveGame.execute({ slotId: DEFAULT_SAVE_SLOT_ID, levelId: this.levelId });
   }
 
   private restartFromCheckpoint(): void {

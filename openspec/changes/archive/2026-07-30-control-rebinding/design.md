@@ -137,6 +137,22 @@ Return context из pause menu не меняется.
 - Composite adapter: keyboard branch читает `keyBindings`; gamepad branch позже читает `gamepadBindings` или дефолтный `gamepad-bindings.ts`
 - Ребиндинг геймпада вынесен в follow-up change после базового gamepad support
 
+### Связь с game-save
+
+`game-save` и `control-rebinding` используют **разные хранилища** и не пересекаются по контракту:
+
+| Подсистема | Ключ / путь | Содержимое |
+|------------|-------------|------------|
+| `ISettingsPort` | `platformer:settings` | audio, video, `controls.keyBindings`, cosmetics |
+| `ISavePort` | `platformer:save:saves/{slotId}.json` | `game` + `character` (прогресс, инвентарь, скилы) |
+
+- `SaveGame` / `LoadGame` **не** читают и **не** пишут `controls` — это non-goal в `game-save`
+- Ребиндинг переживает reload через `LocalStorageSettingsAdapter`, независимо от слота сохранения
+- Пункт «Сохранить» в меню паузы — UI-действие (выбор в списке), не rebindable hotkey; в каталог `InputActionId` не входит
+- При `LoadGame` настройки управления остаются текущими (последние сохранённые в settings)
+
+**Почему не в `GameSave`:** раскладка — глобальная настройка игрока, а не состояние персонажа/сессии; смешивание усложнит миграции и сброс «новой игры».
+
 ## Risks / Trade-offs
 
 - **[Risk] Конфликт клавиш при ребиндинге** → валидация уникальности в `SettingsRules`; UI показывает сообщение «Клавиша уже занята»

@@ -26,7 +26,18 @@ export {
 } from './constants/combat';
 export { DASH_COOLDOWN_MS, DASH_DURATION_MS, DASH_SPEED } from './constants/dash';
 export { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, SETTINGS_VERSION } from './constants/settings';
-export { DEFAULT_SAVE_SLOT_ID, SAVE_STORAGE_KEY_PREFIX, SAVE_VERSION } from './constants/save';
+export {
+  DEFAULT_KEY_BINDINGS,
+  INPUT_ACTION_IDS,
+  isInputActionId,
+} from './constants/input-actions';
+export { INPUT_ACTION_LABELS } from './constants/input-action-labels';
+export {
+  DEFAULT_SAVE_SLOT_ID,
+  SAVE_FILE_PATH_PREFIX,
+  SAVE_STORAGE_KEY_PREFIX,
+  SAVE_VERSION,
+} from './constants/save';
 export {
   INITIAL_EXPERIENCE,
   INITIAL_LEVEL,
@@ -49,8 +60,17 @@ export { DashState } from './value-objects/DashState';
 export { HealthState } from './value-objects/HealthState';
 export { ProgressionState } from './value-objects/ProgressionState';
 export { InventoryState } from './value-objects/InventoryState';
+export { SkillsState } from './value-objects/SkillsState';
 export { Vector2 } from './value-objects/Vector2';
 export { Velocity } from './value-objects/Velocity';
 export type { GameSettings, GameSettingsPatch } from './types/GameSettings';
-export type { GameSave, SaveSlotMeta } from './types/GameSave';
+export type { InputActionId } from './types/InputActionId';
+export type { GamepadBinding } from './types/GamepadBinding';
+export { normalizeKeyCodes } from './utils/normalizeKeyCodes';
+export type {
+  GameSave,
+  GameSaveCharacterState,
+  GameSaveGameState,
+  SaveSlotMeta,
+} from './types/GameSave';
 export type { InventoryItem } from './entities/InventoryItem';

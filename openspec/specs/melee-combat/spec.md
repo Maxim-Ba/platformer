@@ -59,7 +59,7 @@ Player MUST be able to trigger melee attack via keyboard.
 
 #### Scenario: Attack key pressed
 
-- **WHEN** player presses configured attack key (J or X)
+- **WHEN** player presses a key bound to `attack` in current game settings
 - **THEN** input port MUST report attack pressed for the current frame
 
 ### Requirement: Configurable combat constants

@@ -8,6 +8,7 @@ import {
 } from '@domain/constants/skill-trees';
 import { SkillsRules } from '@domain/services/SkillsRules';
 import { MAX_SELECTED_SKILLS, SKILL_POINT_COST } from '@domain/types/SkillTree';
+import { SkillsState } from '@domain/value-objects/SkillsState';
 
 export class InMemorySkillsAdapter implements ISkillsPort {
   private unlockedIds = new Set<string>();
@@ -87,6 +88,20 @@ export class InMemorySkillsAdapter implements ISkillsPort {
 
   isNodeUnlocked(nodeId: string): boolean {
     return this.unlockedIds.has(nodeId);
+  }
+
+  getState(): SkillsState {
+    return new SkillsState(
+      [...this.unlockedIds],
+      [...this.selectedIds],
+      this.availableSkillPoints,
+    );
+  }
+
+  restoreState(state: SkillsState): void {
+    this.unlockedIds = new Set(state.unlockedNodeIds);
+    this.availableSkillPoints = state.availableSkillPoints;
+    this.selectedIds = state.selectedNodeIds.filter((nodeId) => this.unlockedIds.has(nodeId));
   }
 
   reset(): void {

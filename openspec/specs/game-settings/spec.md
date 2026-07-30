@@ -37,7 +37,12 @@ Settings MUST support categories: audio, video, controls, and cosmetics (skins),
 #### Scenario: Control bindings
 
 - **WHEN** settings are loaded
-- **THEN** controls category MUST include a key-bindings map for documented actions (move, jump)
+- **THEN** controls category MUST include a key-bindings map keyed by documented `InputActionId` values with `KeyboardEvent.code` string or string array per action
+
+#### Scenario: Gamepad bindings placeholder
+
+- **WHEN** settings are loaded
+- **THEN** controls category MAY include an optional `gamepadBindings` map for future gamepad assignment without requiring UI in this change
 
 #### Scenario: Cosmetic skin selection
 
@@ -85,6 +90,11 @@ The game MUST provide a SettingsScene that allows the player to view and modify 
 
 - **WHEN** player toggles fullscreen in SettingsScene
 - **THEN** the game MUST apply fullscreen mode and persist the `video.fullscreen` setting
+
+#### Scenario: Rebind controls
+
+- **WHEN** player changes a key binding in the controls subsection of SettingsScene
+- **THEN** `UpdateSettings` MUST persist the change to `controls.keyBindings` via `ISettingsPort`
 
 #### Scenario: Return to main menu
 

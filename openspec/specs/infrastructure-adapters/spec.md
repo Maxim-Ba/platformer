@@ -12,7 +12,7 @@ Infrastructure MUST provide input adapters implementing `IInputPort` for keyboar
 
 #### Scenario: Keyboard movement
 
-- **WHEN** player holds arrow keys or A/D
+- **WHEN** player holds keys bound to `moveLeft` or `moveRight` in current settings
 - **THEN** input adapter MUST report horizontal direction to consumers
 
 #### Scenario: Gamepad movement
@@ -22,7 +22,7 @@ Infrastructure MUST provide input adapters implementing `IInputPort` for keyboar
 
 #### Scenario: Keyboard jump
 
-- **WHEN** player presses Space or configured jump key
+- **WHEN** player presses a key bound to `jump` in current settings
 - **THEN** input adapter MUST report jump pressed for the current frame
 
 #### Scenario: Gamepad jump
@@ -41,7 +41,7 @@ Infrastructure MUST provide input adapters implementing `IInputPort` for keyboar
 
 #### Scenario: Attack key in adapter
 
-- **WHEN** player presses J or X
+- **WHEN** player presses a key bound to `attack` in current settings
 - **THEN** `PhaserInputAdapter` MUST return true from `isAttackPressed()` for that frame
 
 #### Scenario: Input port interface segregation
@@ -55,12 +55,12 @@ Infrastructure MUST provide input adapters implementing `IInputPort` for keyboar
 
 #### Scenario: Dash key detection
 
-- **WHEN** player presses Left Shift
+- **WHEN** player presses a key bound to `dash` in current settings
 - **THEN** `isDashPressed()` MUST return true for that frame
 
 #### Scenario: Dash key not held
 
-- **WHEN** Left Shift is not pressed this frame
+- **WHEN** no key bound to `dash` is pressed this frame
 - **THEN** `isDashPressed()` MUST return false
 
 ### Requirement: Phaser physics adapter

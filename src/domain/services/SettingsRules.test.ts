@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_KEY_BINDINGS } from '../constants/input-actions';
 import { DEFAULT_SETTINGS } from '../constants/settings';
 import { SettingsRules } from './SettingsRules';
 
@@ -46,5 +47,74 @@ describe('SettingsRules', () => {
     });
 
     expect(parsed.audio.masterVolume).toBe(0.25);
+  });
+
+  it('merges key binding patch for known action ids', () => {
+    const merged = rules.merge(DEFAULT_SETTINGS, {
+      controls: { keyBindings: { jump: 'KeyW' } },
+    });
+
+    expect(merged.controls.keyBindings.jump).toBe('KeyW');
+    expect(merged.controls.keyBindings.moveLeft).toEqual(DEFAULT_KEY_BINDINGS.moveLeft);
+  });
+
+  it('rejects duplicate key binding patches', () => {
+    const merged = rules.merge(DEFAULT_SETTINGS, {
+      controls: { keyBindings: { jump: 'KeyA' } },
+    });
+
+    expect(merged.controls.keyBindings.jump).toBe(DEFAULT_KEY_BINDINGS.jump);
+  });
+
+  it('assigns a unique key binding', () => {
+    const assigned = rules.assignKeyBinding(DEFAULT_SETTINGS, 'jump', 'KeyW');
+
+    expect(assigned?.controls.keyBindings.jump).toBe('KeyW');
+  });
+
+  it('rejects conflicting key assignment', () => {
+    const assigned = rules.assignKeyBinding(DEFAULT_SETTINGS, 'jump', 'KeyA');
+
+    expect(assigned).toBeNull();
+  });
+
+  it('allows Escape only for pause action', () => {
+    expect(rules.assignKeyBinding(DEFAULT_SETTINGS, 'pause', 'Escape')).not.toBeNull();
+    expect(rules.assignKeyBinding(DEFAULT_SETTINGS, 'jump', 'Escape')).toBeNull();
+  });
+
+  it('resets controls to defaults', () => {
+    const customized = rules.assignKeyBinding(DEFAULT_SETTINGS, 'jump', 'KeyW');
+    const reset = rules.resetControlsToDefaults(customized!);
+
+    expect(reset.controls.keyBindings).toEqual(DEFAULT_KEY_BINDINGS);
+  });
+
+  it('preserves gamepadBindings when controls are reset', () => {
+    const withGamepad = rules.validate({
+      ...DEFAULT_SETTINGS,
+      controls: {
+        keyBindings: { ...DEFAULT_KEY_BINDINGS },
+        gamepadBindings: { jump: { kind: 'button', index: 0 } },
+      },
+    });
+    const reset = rules.resetControlsToDefaults(withGamepad);
+
+    expect(reset.controls.gamepadBindings).toEqual({ jump: { kind: 'button', index: 0 } });
+  });
+
+  it('preserves gamepadBindings on partial controls patch', () => {
+    const withGamepad = rules.validate({
+      ...DEFAULT_SETTINGS,
+      controls: {
+        keyBindings: { ...DEFAULT_KEY_BINDINGS },
+        gamepadBindings: { jump: { kind: 'button', index: 0 } },
+      },
+    });
+    const merged = rules.merge(withGamepad, {
+      controls: { keyBindings: { jump: 'KeyW' } },
+    });
+
+    expect(merged.controls.gamepadBindings).toEqual({ jump: { kind: 'button', index: 0 } });
   });
 });

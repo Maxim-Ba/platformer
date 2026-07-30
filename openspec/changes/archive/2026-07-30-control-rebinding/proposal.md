@@ -40,3 +40,4 @@
 - `src/presentation/ui/hud/ControlsHintWidget.ts` — динамический текст
 - `src/game/composition-root.ts` — передача settings в input adapter (или подписка на изменения)
 - Связь с `gamepad-input`: composite adapter будет читать keyboard из settings; gamepad-маппинг остаётся в отдельном change
+- Связь с `game-save`: биндинги персистятся только через `ISettingsPort` (`platformer:settings`), не в `GameSave`; `LoadGame` не трогает controls

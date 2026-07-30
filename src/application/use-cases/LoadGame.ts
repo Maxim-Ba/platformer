@@ -1,6 +1,8 @@
 import type { IInventoryPort } from '../ports/IInventoryPort';
+import type { IPlayerStatsPort } from '../ports/IPlayerStatsPort';
 import type { IProgressionPort } from '../ports/IProgressionPort';
 import type { ISavePort } from '../ports/ISavePort';
+import type { ISkillsPort } from '../ports/ISkillsPort';
 
 export interface LoadGameInput {
   slotId: string;
@@ -15,6 +17,8 @@ export class LoadGame {
     private readonly savePort: ISavePort,
     private readonly progressionPort: IProgressionPort,
     private readonly inventoryPort: IInventoryPort,
+    private readonly skillsPort: ISkillsPort,
+    private readonly playerStatsPort?: IPlayerStatsPort,
   ) {}
 
   execute(input: LoadGameInput): LoadGameResult | null {
@@ -23,9 +27,14 @@ export class LoadGame {
       return null;
     }
 
-    this.progressionPort.restoreProgression(save.progression);
-    this.inventoryPort.restoreInventory(save.inventory);
+    this.progressionPort.restoreProgression(save.character.progression);
+    this.inventoryPort.restoreInventory(save.character.inventory);
+    this.skillsPort.restoreState(save.character.skills);
 
-    return { levelId: save.levelId };
+    if (save.character.stats && this.playerStatsPort) {
+      this.playerStatsPort.restoreState(save.character.stats);
+    }
+
+    return { levelId: save.game.levelId };
   }
 }

@@ -40,7 +40,7 @@ import { InMemoryInventoryAdapter } from '@infrastructure/adapters/InMemoryInven
 import { InMemoryPlayerStatsAdapter } from '@infrastructure/adapters/InMemoryPlayerStatsAdapter';
 import { InMemoryProgressionAdapter } from '@infrastructure/adapters/InMemoryProgressionAdapter';
 import { InMemorySkillsAdapter } from '@infrastructure/adapters/InMemorySkillsAdapter';
-import { LocalStorageSaveAdapter } from '@infrastructure/adapters/LocalStorageSaveAdapter';
+import { JsonFileSaveAdapter } from '@infrastructure/adapters/JsonFileSaveAdapter';
 import { LocalStorageSettingsAdapter } from '@infrastructure/adapters/LocalStorageSettingsAdapter';
 import { LevelCollisionResolver } from '@infrastructure/phaser/LevelCollisionResolver';
 import { TiledLevelRepository } from '@infrastructure/tiled/TiledLevelRepository';
@@ -173,7 +173,7 @@ function createInventoryPort(): IInventoryPort {
 
 function createSavePort(): ISavePort {
   if (!savePortSingleton) {
-    savePortSingleton = new LocalStorageSaveAdapter();
+    savePortSingleton = new JsonFileSaveAdapter();
   }
 
   return savePortSingleton;
@@ -191,7 +191,10 @@ export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies 
   const applyDamage = new ApplyDamage(healthPort);
 
   const gamepadReader = new PhaserGamepadReader(scene);
-  const keyboardInput = new PhaserKeyboardInputAdapter(scene);
+  const settingsPort = createSettingsPort();
+  const keyboardInput = new PhaserKeyboardInputAdapter(scene, () =>
+    settingsPort.getSettings().controls,
+  );
 
   return {
     inputPort: new CompositeInputAdapter(keyboardInput, gamepadReader),
@@ -239,8 +242,8 @@ export function createAppDependencies(): AppDependencies {
     useItem: new UseItem(inventoryPort),
     savePort,
     startNewGame: new StartNewGame(progressionPort, inventoryPort, skillsPort),
-    saveGame: new SaveGame(savePort, progressionPort, inventoryPort),
-    loadGame: new LoadGame(savePort, progressionPort, inventoryPort),
+    saveGame: new SaveGame(savePort, progressionPort, inventoryPort, skillsPort, playerStatsPort),
+    loadGame: new LoadGame(savePort, progressionPort, inventoryPort, skillsPort, playerStatsPort),
     listSaveSlots: new ListSaveSlots(savePort),
     createSceneDependencies,
   };
