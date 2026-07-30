@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="3">
+ <editorsettings>
+  <export target="../public/assets/maps/room-a.json" format="json"/>
+ </editorsettings>
+ <tileset firstgid="1" name="platformer" tilewidth="32" tileheight="32" tilecount="2" columns="2">
+  <image source="../public/assets/tilesets/platformer-tiles.png" width="64" height="32"/>
+  <tile id="0">
+   <properties>
+    <property name="solid" type="bool" value="true"/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="3" source="beast_soldier.tsx"/>
+ <layer id="1" name="ground" width="24" height="12">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+</data>
+ </layer>
+ <layer id="2" name="decor" width="24" height="12">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="3" name="objects">
+  <object id="1" name="Player Spawn" type="player_spawn" x="96" y="288" width="32" height="32"/>
+  <object id="2" name="Boundary to B" type="boundary_exit" x="736" y="256" width="32" height="64">
+   <properties>
+    <property name="exitId" type="string" value="to-b"/>
+    <property name="targetRoom" type="string" value="room-b"/>
+    <property name="targetExitId" type="string" value="from-a"/>
+    <property name="edge" type="string" value="right"/>
+    <property name="facing" type="string" value="left"/>
+   </properties>
+  </object>
+  <object id="3" name="Boundary to C" type="boundary_exit" x="352" y="320" width="64" height="64">
+   <properties>
+    <property name="exitId" type="string" value="to-c"/>
+    <property name="targetRoom" type="string" value="room-c"/>
+    <property name="targetExitId" type="string" value="from-a"/>
+    <property name="edge" type="string" value="bottom"/>
+    <property name="facing" type="string" value="right"/>
+   </properties>
+  </object>
+  <object id="4" name="Door to B (interior)" type="door" x="320" y="256" width="32" height="64">
+   <properties>
+    <property name="doorId" type="string" value="interior-to-b"/>
+    <property name="targetRoom" type="string" value="room-b"/>
+    <property name="targetDoor" type="string" value="interior-from-a"/>
+    <property name="facing" type="string" value="right"/>
+   </properties>
+  </object>
+ </objectgroup>
+</map>

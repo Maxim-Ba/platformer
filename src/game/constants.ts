@@ -4,6 +4,8 @@ export const REGISTRY_APP_DEPENDENCIES_KEY = 'appDependencies';
 
 export const DEFAULT_LEVEL_ID = 'level-01';
 
+export const DEFAULT_ROOM_ID = 'room-a';
+
 export const LEVEL_PROGRESSION: readonly string[] = ['level-01'] as const;
 
 export function getNextLevelId(currentLevelId: string): string | undefined {

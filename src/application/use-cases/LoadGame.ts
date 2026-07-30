@@ -10,6 +10,7 @@ export interface LoadGameInput {
 
 export interface LoadGameResult {
   levelId: string;
+  currentRoomId: string;
 }
 
 export class LoadGame {
@@ -35,6 +36,9 @@ export class LoadGame {
       this.playerStatsPort.restoreState(save.character.stats);
     }
 
-    return { levelId: save.game.levelId };
+    return {
+      levelId: save.game.levelId,
+      currentRoomId: save.game.currentRoomId ?? save.game.levelId,
+    };
   }
 }

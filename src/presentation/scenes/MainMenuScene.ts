@@ -43,8 +43,8 @@ export class MainMenuScene extends Phaser.Scene {
         this.hasTransitioned = true;
 
         if (item.id === 'new-game') {
-          const { levelId } = dependencies.startNewGame.execute();
-          this.scene.start(SceneKeys.Game, { levelId });
+          const { levelId, currentRoomId } = dependencies.startNewGame.execute();
+          this.scene.start(SceneKeys.Game, { levelId, currentRoomId });
           return;
         }
 

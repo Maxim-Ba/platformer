@@ -1,4 +1,4 @@
-import type { LevelDefinition } from '@domain/entities/LevelDefinition';
+import type { RoomDefinition } from '@domain/entities/RoomDefinition';
 
 import type { ILevelRepository } from '../ports/ILevelRepository';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
@@ -15,11 +15,11 @@ export class LoadLevel {
     this.tiledRepository = levelRepository;
   }
 
-  async execute(levelId: string): Promise<LevelDefinition> {
+  async execute(levelId: string): Promise<RoomDefinition> {
     return this.tiledRepository.load(levelId);
   }
 
-  fromTiledMap(levelId: string, map: TiledMapJson): LevelDefinition {
+  fromTiledMap(levelId: string, map: TiledMapJson): RoomDefinition {
     return this.tiledRepository.parseMap(levelId, map);
   }
 }

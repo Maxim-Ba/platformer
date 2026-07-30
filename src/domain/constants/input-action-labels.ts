@@ -6,6 +6,7 @@ export const INPUT_ACTION_LABELS: Record<InputActionId, string> = {
   jump: 'Прыжок',
   dash: 'Рывок',
   attack: 'Атака',
+  interact: 'Взаимодействие',
   pause: 'Пауза',
   charMenuInventory: 'Меню: инвентарь',
   charMenuSkills: 'Меню: навыки',

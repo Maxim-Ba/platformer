@@ -17,6 +17,11 @@ export class PlayerSprite {
     this.sprite.setDisplaySize(32, 48);
   }
 
+  setFacing(direction: -1 | 1): void {
+    this.facingDirection = direction;
+    this.sprite.setFlipX(direction < 0);
+  }
+
   getFacingDirection(): -1 | 1 {
     return this.facingDirection;
   }

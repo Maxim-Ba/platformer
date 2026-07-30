@@ -14,6 +14,7 @@ const GAMEPLAY_ACTION_IDS: readonly InputActionId[] = [
   'jump',
   'dash',
   'attack',
+  'interact',
   'pause',
 ];
 
@@ -42,7 +43,7 @@ function buildControlsHintText(controls: GameSettings['controls']): string {
     .map((actionId) => formatKeyCode(normalizePrimaryCode(controls.keyBindings[actionId])))
     .join('/');
 
-  return `KB: ${gameplayParts.join(', ')} | ${charMenuKeys} — character menu | Pad: stick/D-pad — move, A — jump, Y — dash, X — attack, Start — pause, Back — character menu, LB/RB — tabs`;
+  return `KB: ${gameplayParts.join(', ')} | ${charMenuKeys} — character menu | Pad: stick/D-pad — move, A — jump, Y — dash, X — attack, RB — interact, Start — pause, Back — character menu, LB/RB — tabs`;
 }
 
 function normalizePrimaryCode(binding: string | string[]): string {

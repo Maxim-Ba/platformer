@@ -9,6 +9,7 @@ import type { GameSave } from '@domain/types/GameSave';
 export interface SaveGameInput {
   slotId: string;
   levelId: string;
+  currentRoomId?: string;
 }
 
 export class SaveGame {
@@ -34,7 +35,10 @@ export class SaveGame {
     const payload: GameSave = {
       version: SAVE_VERSION,
       savedAt: new Date().toISOString(),
-      game: { levelId: input.levelId },
+      game: {
+        levelId: input.levelId,
+        ...(input.currentRoomId ? { currentRoomId: input.currentRoomId } : {}),
+      },
       character,
     };
 

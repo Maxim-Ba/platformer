@@ -10,6 +10,7 @@ function createKeyboardStub(values: Partial<Record<keyof IInputPort, boolean>>):
     isRightPressed: () => values.isRightPressed ?? false,
     isJumpPressed: () => values.isJumpPressed ?? false,
     isAttackPressed: () => values.isAttackPressed ?? false,
+    isInteractPressed: () => values.isInteractPressed ?? false,
     isDashPressed: () => values.isDashPressed ?? false,
   };
 }
@@ -23,6 +24,7 @@ function createGamepadStub(values: Partial<Record<keyof IInputPort, boolean>>): 
     isRightPressed: () => values.isRightPressed ?? false,
     isJumpPressed: () => values.isJumpPressed ?? false,
     isAttackPressed: () => values.isAttackPressed ?? false,
+    isInteractPressed: () => values.isInteractPressed ?? false,
     isDashPressed: () => values.isDashPressed ?? false,
   } as unknown as PhaserGamepadReader;
 }

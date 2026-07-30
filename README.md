@@ -153,7 +153,7 @@ Game → Level Complete (победа: выход level_exit)
 ```
 
 - **Главное меню:** три пункта — «Новая игра», «Загрузка», «Настройки». Навигация ↑↓, подтверждение Enter/Space.
-- **Новая игра:** сброс progression/inventory через `StartNewGame`, старт с `DEFAULT_LEVEL_ID`.
+- **Новая игра:** сброс progression/inventory через `StartNewGame`, старт с `DEFAULT_LEVEL_ID` (legacy) или `room-a` при включённом playtest мира.
 - **Загрузка:** один quick-save слот (`slot-1`). Если сохранения нет — «Нет сохранений». Enter загружает прогресс.
 - **Настройки:** master/music/sfx volume (← →), fullscreen (Space). Изменения сохраняются в localStorage.
 - **Автосохранение:** при переходе в Main Menu с экранов Game Over / Level Complete (M) текущий прогресс сохраняется в слот `slot-1`.
@@ -180,6 +180,20 @@ Game → Level Complete (победа: выход level_exit)
 6. Проверка: `npm run dev` → Main Menu → уровень загружается из `assets/maps/level-01.json`.
 
 При добавлении нового уровня: экспортируйте `level-02.json` и передайте `levelId` в `GameScene` (см. `DEFAULT_LEVEL_ID` в `src/game/constants.ts`).
+
+### Mock room world playtest
+
+Change `interconnected-world` добавляет две связанные комнаты `room-a` ↔ `room-b` с переходом через объект Tiled `door` (без `LevelCompleteScene`).
+
+| Флаг | Файл | Поведение |
+|------|------|-----------|
+| `WORLD_PLAYTEST_ENABLED` | `src/game/world-graph.ts` | `true` — «Новая игра» стартует в `room-a`; `false` — legacy `level-01` |
+
+Исходники: `tiled/room-a.tmx`, `tiled/room-b.tmx`. Экспорт: `public/assets/maps/room-a.json`, `room-b.json`.
+
+Проверка: `npm run dev` → Новая игра → дойти до синей двери справа → `room-b` → дверь слева → обратно в `room-a`. Сохранение в паузе пишет `currentRoomId` в save.
+
+Чтобы вернуться к demo `level-01`, установите `WORLD_PLAYTEST_ENABLED = false` в `src/game/world-graph.ts`.
 
 ## Next steps
 

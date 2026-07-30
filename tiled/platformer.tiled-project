@@ -38,6 +38,22 @@
             "name": "checkpoint",
             "type": "object",
             "useAs": "object"
+        },
+        {
+            "color": "#55ffff",
+            "drawFill": true,
+            "id": 5,
+            "name": "door",
+            "type": "object",
+            "useAs": "object"
+        },
+        {
+            "color": "#aa55ff",
+            "drawFill": true,
+            "id": 6,
+            "name": "boundary_exit",
+            "type": "object",
+            "useAs": "object"
         }
     ],
     "propertyTypes": [],

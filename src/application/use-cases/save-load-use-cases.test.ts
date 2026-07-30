@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_SAVE_SLOT_ID, SAVE_FILE_PATH_PREFIX } from '@domain/constants/save';
-import { DEFAULT_LEVEL_ID } from '@game/constants';
+import { DEFAULT_LEVEL_ID, DEFAULT_ROOM_ID } from '@game/constants';
+import { WORLD_PLAYTEST_ENABLED } from '@game/world-graph';
 import { MOCK_DEFAULT_SKILL_POINTS } from '@domain/constants/skill-trees';
 import { SkillsState } from '@domain/value-objects/SkillsState';
 import { InMemoryInventoryAdapter } from '@infrastructure/adapters/InMemoryInventoryAdapter';
@@ -55,7 +56,7 @@ describe('save/load use cases', () => {
     const useCase = new StartNewGame(progressionPort, inventoryPort, skillsPort);
     const result = useCase.execute();
 
-    expect(result.levelId).toBe(DEFAULT_LEVEL_ID);
+    expect(result.levelId).toBe(WORLD_PLAYTEST_ENABLED ? DEFAULT_ROOM_ID : DEFAULT_LEVEL_ID);
     expect(progressionPort.getProgression().experience).toBe(0);
     expect(progressionPort.getProgression().level).toBe(1);
     expect(inventoryPort.getInventory().slots.every((slot) => slot === null)).toBe(true);
@@ -143,7 +144,7 @@ describe('save/load use cases', () => {
     );
     const result = loadOnFreshPorts.execute({ slotId: DEFAULT_SAVE_SLOT_ID });
 
-    expect(result).toEqual({ levelId: 'level-01' });
+    expect(result).toEqual({ levelId: 'level-01', currentRoomId: 'level-01' });
     expect(freshProgression.getProgression().level).toBe(2);
     expect(freshProgression.getProgression().experience).toBe(0);
     expect(freshProgression.isUnlocked('dash')).toBe(true);

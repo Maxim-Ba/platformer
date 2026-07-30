@@ -93,6 +93,10 @@ export class PhaserGamepadReader {
     return this.wasButtonJustPressed(GAMEPAD_BUTTON.X);
   }
 
+  isInteractPressed(): boolean {
+    return this.wasButtonJustPressed(GAMEPAD_BUTTON.RB);
+  }
+
   isDashPressed(): boolean {
     return this.wasButtonJustPressed(GAMEPAD_BUTTON.Y);
   }

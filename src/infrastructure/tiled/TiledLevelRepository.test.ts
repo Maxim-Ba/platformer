@@ -89,6 +89,8 @@ describe('TiledLevelRepository', () => {
     expect(level.checkpoints).toHaveLength(1);
     expect(level.checkpoints[0]?.id).toBe('checkpoint-4');
     expect(level.enemySpawns).toHaveLength(0);
+    expect(level.doors).toHaveLength(0);
+    expect(level.boundaryExits).toHaveLength(0);
   });
 
   it('parses enemy_spawn with enemyType and optional patrolDistance', () => {
@@ -211,6 +213,121 @@ describe('TiledLevelRepository', () => {
     const level = repository.parseMap('level-types', mapWithEnemies);
 
     expect(level.enemySpawns.map((spawn) => spawn.enemyType)).toEqual(['flyer', 'caster']);
+  });
+
+  it('parses door objects with defaults and custom fadeMs', () => {
+    const repository = new TiledLevelRepository();
+    const objectsLayer = sampleMap.layers.find(
+      (layer): layer is Extract<typeof layer, { type: 'objectgroup' }> =>
+        layer.type === 'objectgroup',
+    )!;
+    const mapWithDoor: TiledMapJson = {
+      ...sampleMap,
+      layers: [
+        {
+          name: 'objects',
+          type: 'objectgroup',
+          objects: [
+            ...objectsLayer.objects,
+            {
+              id: 9,
+              name: 'Door to B',
+              type: 'door',
+              x: 704,
+              y: 288,
+              width: 32,
+              height: 64,
+              properties: [
+                { name: 'doorId', type: 'string', value: 'to-b' },
+                { name: 'targetRoom', type: 'string', value: 'room-b' },
+                { name: 'targetDoor', type: 'string', value: 'from-a' },
+                { name: 'facing', type: 'string', value: 'right' },
+              ],
+            },
+            {
+              id: 10,
+              name: 'Door with fade',
+              type: 'door',
+              x: 0,
+              y: 288,
+              width: 32,
+              height: 64,
+              properties: [
+                { name: 'doorId', type: 'string', value: 'from-a' },
+                { name: 'targetRoom', type: 'string', value: 'room-a' },
+                { name: 'targetDoor', type: 'string', value: 'to-b' },
+                { name: 'facing', type: 'string', value: 'left' },
+                { name: 'fadeMs', type: 'int', value: 250 },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const level = repository.parseMap('room-a', mapWithDoor);
+
+    expect(level.doors).toHaveLength(2);
+    expect(level.doors[0]).toEqual({
+      kind: 'door',
+      id: 'to-b',
+      bounds: { x: 704, y: 288, width: 32, height: 64 },
+      targetRoom: 'room-b',
+      targetDoor: 'from-a',
+      facing: 'right',
+      fadeMs: 150,
+    });
+    expect(level.doors[1]?.fadeMs).toBe(250);
+  });
+
+  it('parses boundary_exit objects with defaults', () => {
+    const repository = new TiledLevelRepository();
+    const objectsLayer = sampleMap.layers.find(
+      (layer): layer is Extract<typeof layer, { type: 'objectgroup' }> =>
+        layer.type === 'objectgroup',
+    )!;
+    const mapWithBoundary: TiledMapJson = {
+      ...sampleMap,
+      layers: [
+        {
+          name: 'objects',
+          type: 'objectgroup',
+          objects: [
+            ...objectsLayer.objects,
+            {
+              id: 11,
+              name: 'Boundary to C',
+              type: 'boundary_exit',
+              x: 352,
+              y: 320,
+              width: 64,
+              height: 64,
+              properties: [
+                { name: 'exitId', type: 'string', value: 'to-c' },
+                { name: 'targetRoom', type: 'string', value: 'room-c' },
+                { name: 'targetExitId', type: 'string', value: 'from-a' },
+                { name: 'edge', type: 'string', value: 'bottom' },
+                { name: 'facing', type: 'string', value: 'right' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const level = repository.parseMap('room-a', mapWithBoundary);
+
+    expect(level.boundaryExits).toHaveLength(1);
+    expect(level.boundaryExits[0]).toEqual({
+      kind: 'boundary_exit',
+      id: 'to-c',
+      bounds: { x: 352, y: 320, width: 64, height: 64 },
+      targetRoom: 'room-c',
+      targetExitId: 'from-a',
+      edge: 'bottom',
+      facing: 'right',
+      fadeMs: 150,
+    });
   });
 
   it('throws when player_spawn is missing', () => {

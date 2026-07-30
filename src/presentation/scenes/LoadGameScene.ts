@@ -120,6 +120,9 @@ export class LoadGameScene extends Phaser.Scene {
     }
 
     this.hasTransitioned = true;
-    this.scene.start(SceneKeys.Game, { levelId: result.levelId });
+    this.scene.start(SceneKeys.Game, {
+      levelId: result.levelId,
+      currentRoomId: result.currentRoomId,
+    });
   }
 }

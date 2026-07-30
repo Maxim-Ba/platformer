@@ -1,7 +1,8 @@
 import type { InputSnapshot } from '@application/use-cases/InputSnapshot';
 import type { AddExperience } from '@application/use-cases/AddExperience';
 import type { IInputPort } from '@application/ports/IInputPort';
-import type { LevelDefinition } from '@domain/entities/LevelDefinition';
+import type { RoomDefinition } from '@domain/entities/RoomDefinition';
+import type { RoomTransitionPlan } from '@domain/entities/RoomTransitionPlan';
 import { HAZARD_DAMAGE } from '@domain/constants/health';
 import { CombatRules } from '@domain/services/CombatRules';
 import { COYOTE_TIME_MS } from '@domain/constants/movement';
@@ -77,8 +78,12 @@ export class GameScene extends Phaser.Scene {
   private playerState!: PlayerState;
   private playerSprite?: PlayerSprite;
   private levelId = DEFAULT_LEVEL_ID;
-  private level!: LevelDefinition;
+  private currentRoomId = DEFAULT_LEVEL_ID;
+  private level!: RoomDefinition;
+  private tilemap?: Phaser.Tilemaps.Tilemap;
   private groundLayer?: Phaser.Tilemaps.TilemapLayer;
+  private decorLayer?: Phaser.Tilemaps.TilemapLayer;
+  private readonly levelObjectVisuals: Phaser.GameObjects.Rectangle[] = [];
   private respawnPosition!: Vector2;
   private activatedCheckpointIds = new Set<string>();
   private readonly hotkeyCache = new Map<string, Phaser.Input.Keyboard.Key>();
@@ -90,6 +95,7 @@ export class GameScene extends Phaser.Scene {
   private pauseMenuOverlay?: PauseMenuOverlay;
   private isRespawning = false;
   private isCompleting = false;
+  private isTransitioning = false;
   private hud?: GameHud;
   private facingDirection: -1 | 1 = 1;
   private enemySprites = new Map<string, EnemySprite>();
@@ -101,15 +107,19 @@ export class GameScene extends Phaser.Scene {
     super({ key: SceneKeys.Game });
   }
 
-  init(data: { levelId?: string }): void {
+  init(data: { levelId?: string; currentRoomId?: string }): void {
     const appDependencies = getAppDependenciesFromRegistry(this);
     this.deps = appDependencies.createSceneDependencies(this);
     this.addExperience = appDependencies.addExperience;
     this.levelId = data.levelId ?? DEFAULT_LEVEL_ID;
+    this.currentRoomId = data.currentRoomId ?? this.levelId;
   }
 
   preload(): void {
-    this.load.tilemapTiledJSON(mapCacheKey(this.levelId), `assets/maps/${this.levelId}.json`);
+    this.load.tilemapTiledJSON(
+      mapCacheKey(this.currentRoomId),
+      `assets/maps/${this.currentRoomId}.json`,
+    );
     this.load.image(AssetKeys.Tileset, 'assets/tilesets/platformer-tiles.png');
     this.load.image(AssetKeys.BeastSoldierTileset, BEAST_SOLDIER_TILESET_PATH);
   }
@@ -140,7 +150,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (this.isRespawning || this.isCompleting || !this.playerSprite || !this.groundLayer) {
+    if (this.isRespawning || this.isCompleting || this.isTransitioning || !this.playerSprite || !this.groundLayer) {
       return;
     }
 
@@ -207,6 +217,9 @@ export class GameScene extends Phaser.Scene {
     this.destroyHud();
     this.playerSprite = undefined;
     this.groundLayer = undefined;
+    this.decorLayer = undefined;
+    this.tilemap = undefined;
+    this.clearLevelObjectVisuals();
     this.activatedCheckpointIds = new Set();
     this.deps.healthPort.reset();
     this.deps.manaPort.reset();
@@ -220,6 +233,7 @@ export class GameScene extends Phaser.Scene {
     this.facingDirection = 1;
     this.isRespawning = false;
     this.isCompleting = false;
+    this.isTransitioning = false;
     this.isPaused = false;
   }
 
@@ -288,35 +302,17 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.roundPixels = true;
     this.cameras.main.resetFX();
 
-    const cacheKey = mapCacheKey(this.levelId);
+    const cacheKey = mapCacheKey(this.currentRoomId);
     const cachedMap = this.cache.tilemap.get(cacheKey);
     if (!cachedMap) {
       throw new Error(`Tilemap "${cacheKey}" is not loaded.`);
     }
 
-    this.level = this.deps.loadLevel.fromTiledMap(this.levelId, cachedMap.data as TiledMapJson);
-
-    const map = this.make.tilemap({ key: cacheKey });
-    const platformerTileset = map.addTilesetImage('platformer', AssetKeys.Tileset);
-    const beastSoldierTileset = map.addTilesetImage('beast_soldier', AssetKeys.BeastSoldierTileset);
-    if (!platformerTileset || !beastSoldierTileset) {
-      throw new Error(`Failed to bind tilesets for level "${this.levelId}"`);
-    }
-
-    const tilesets = [platformerTileset, beastSoldierTileset];
-    const groundLayer = map.createLayer('ground', tilesets, 0, 0);
-    const decorLayer = map.createLayer('decor', tilesets, 0, 0);
-    if (!groundLayer || !decorLayer) {
-      throw new Error(`Failed to create tile layers for level "${this.levelId}"`);
-    }
-
-    groundLayer.setCollisionByProperty({ solid: true });
-    groundLayer.setDepth(0);
-    decorLayer.setDepth(1);
-    this.groundLayer = groundLayer;
+    this.level = this.deps.loadLevel.fromTiledMap(this.currentRoomId, cachedMap.data as TiledMapJson);
+    this.buildRoomLayers(cacheKey);
 
     const spawnPosition = this.deps.levelCollisionResolver.resolveSpawnPosition(
-      groundLayer,
+      this.groundLayer!,
       this.level.playerSpawn.position,
     );
     this.respawnPosition = spawnPosition;
@@ -327,7 +323,30 @@ export class GameScene extends Phaser.Scene {
     this.setupCameraFollow();
     this.createHud();
 
-    this.registry.set('currentLevelId', this.levelId);
+    this.registry.set('currentLevelId', this.currentRoomId);
+  }
+
+  private buildRoomLayers(cacheKey: string): void {
+    const map = this.make.tilemap({ key: cacheKey });
+    const platformerTileset = map.addTilesetImage('platformer', AssetKeys.Tileset);
+    const beastSoldierTileset = map.addTilesetImage('beast_soldier', AssetKeys.BeastSoldierTileset);
+    if (!platformerTileset || !beastSoldierTileset) {
+      throw new Error(`Failed to bind tilesets for room "${this.currentRoomId}"`);
+    }
+
+    const tilesets = [platformerTileset, beastSoldierTileset];
+    const groundLayer = map.createLayer('ground', tilesets, 0, 0);
+    const decorLayer = map.createLayer('decor', tilesets, 0, 0);
+    if (!groundLayer || !decorLayer) {
+      throw new Error(`Failed to create tile layers for room "${this.currentRoomId}"`);
+    }
+
+    groundLayer.setCollisionByProperty({ solid: true });
+    groundLayer.setDepth(0);
+    decorLayer.setDepth(1);
+    this.tilemap = map;
+    this.groundLayer = groundLayer;
+    this.decorLayer = decorLayer;
   }
 
   private createHud(): void {
@@ -350,7 +369,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleCharacterMenuInput(): boolean {
-    if (this.isPaused || this.isRespawning || this.isCompleting) {
+    if (this.isPaused || this.isRespawning || this.isCompleting || this.isTransitioning) {
       return false;
     }
 
@@ -408,7 +427,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private openCharacterMenu(tabId: CharacterMenuTabId): void {
-    if (this.isRespawning || this.isCompleting) {
+    if (this.isRespawning || this.isCompleting || this.isTransitioning) {
       return;
     }
 
@@ -452,7 +471,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private openPauseMenu(): void {
-    if (this.isRespawning || this.isCompleting || this.isPaused) {
+    if (this.isRespawning || this.isCompleting || this.isTransitioning || this.isPaused) {
       return;
     }
 
@@ -487,7 +506,11 @@ export class GameScene extends Phaser.Scene {
 
   private saveFromPause(): void {
     const appDependencies = getAppDependenciesFromRegistry(this);
-    appDependencies.saveGame.execute({ slotId: DEFAULT_SAVE_SLOT_ID, levelId: this.levelId });
+    appDependencies.saveGame.execute({
+      slotId: DEFAULT_SAVE_SLOT_ID,
+      levelId: this.levelId,
+      currentRoomId: this.currentRoomId,
+    });
   }
 
   private restartFromCheckpoint(): void {
@@ -497,7 +520,11 @@ export class GameScene extends Phaser.Scene {
 
   private exitToMainMenu(): void {
     const appDependencies = getAppDependenciesFromRegistry(this);
-    appDependencies.saveGame.execute({ slotId: DEFAULT_SAVE_SLOT_ID, levelId: this.levelId });
+    appDependencies.saveGame.execute({
+      slotId: DEFAULT_SAVE_SLOT_ID,
+      levelId: this.levelId,
+      currentRoomId: this.currentRoomId,
+    });
     this.scene.start(SceneKeys.MainMenu);
   }
 
@@ -679,43 +706,87 @@ export class GameScene extends Phaser.Scene {
 
   private renderLevelObjects(): void {
     for (const hazard of this.level.hazards) {
-      this.add
-        .rectangle(
-          hazard.position.x + hazard.width / 2,
-          hazard.position.y + hazard.height / 2,
-          hazard.width,
-          hazard.height,
-          0xef4444,
-          0.65,
-        )
-        .setDepth(2);
+      this.levelObjectVisuals.push(
+        this.add
+          .rectangle(
+            hazard.position.x + hazard.width / 2,
+            hazard.position.y + hazard.height / 2,
+            hazard.width,
+            hazard.height,
+            0xef4444,
+            0.65,
+          )
+          .setDepth(2),
+      );
     }
 
     for (const checkpoint of this.level.checkpoints) {
-      this.add
-        .rectangle(
-          checkpoint.position.x + checkpoint.width / 2,
-          checkpoint.position.y + checkpoint.height / 2,
-          checkpoint.width,
-          checkpoint.height,
-          0xfacc15,
-          0.65,
-        )
-        .setDepth(2);
+      this.levelObjectVisuals.push(
+        this.add
+          .rectangle(
+            checkpoint.position.x + checkpoint.width / 2,
+            checkpoint.position.y + checkpoint.height / 2,
+            checkpoint.width,
+            checkpoint.height,
+            0xfacc15,
+            0.65,
+          )
+          .setDepth(2),
+      );
     }
 
     for (const exit of this.level.exits) {
-      this.add
-        .rectangle(
-          exit.position.x + exit.width / 2,
-          exit.position.y + exit.height / 2,
-          exit.width,
-          exit.height,
-          0x22c55e,
-          0.65,
-        )
-        .setDepth(2);
+      this.levelObjectVisuals.push(
+        this.add
+          .rectangle(
+            exit.position.x + exit.width / 2,
+            exit.position.y + exit.height / 2,
+            exit.width,
+            exit.height,
+            0x22c55e,
+            0.65,
+          )
+          .setDepth(2),
+      );
     }
+
+    for (const door of this.level.doors) {
+      this.levelObjectVisuals.push(
+        this.add
+          .rectangle(
+            door.bounds.x + door.bounds.width / 2,
+            door.bounds.y + door.bounds.height / 2,
+            door.bounds.width,
+            door.bounds.height,
+            0x38bdf8,
+            0.65,
+          )
+          .setDepth(2),
+      );
+    }
+
+    for (const boundaryExit of this.level.boundaryExits) {
+      this.levelObjectVisuals.push(
+        this.add
+          .rectangle(
+            boundaryExit.bounds.x + boundaryExit.bounds.width / 2,
+            boundaryExit.bounds.y + boundaryExit.bounds.height / 2,
+            boundaryExit.bounds.width,
+            boundaryExit.bounds.height,
+            0xa855f7,
+            0.45,
+          )
+          .setDepth(2),
+      );
+    }
+  }
+
+  private clearLevelObjectVisuals(): void {
+    for (const visual of this.levelObjectVisuals) {
+      visual.destroy();
+    }
+
+    this.levelObjectVisuals.length = 0;
   }
 
   private spawnPlayer(position: Vector2): void {
@@ -800,6 +871,170 @@ export class GameScene extends Phaser.Scene {
         return;
       }
     }
+
+    for (const door of this.level.doors) {
+      if (
+        overlapsPlayerAabb(
+          x,
+          y,
+          door.bounds.x,
+          door.bounds.y,
+          door.bounds.width,
+          door.bounds.height,
+        )
+      ) {
+        if (this.deps.inputPort.isInteractPressed()) {
+          void this.triggerDoorTransition(door.id);
+        }
+
+        return;
+      }
+    }
+
+    for (const boundaryExit of this.level.boundaryExits) {
+      if (
+        overlapsPlayerAabb(
+          x,
+          y,
+          boundaryExit.bounds.x,
+          boundaryExit.bounds.y,
+          boundaryExit.bounds.width,
+          boundaryExit.bounds.height,
+        )
+      ) {
+        void this.triggerBoundaryTransition(boundaryExit.id);
+        return;
+      }
+    }
+  }
+
+  private triggerBoundaryTransition(exitId: string): void {
+    if (this.isTransitioning) {
+      return;
+    }
+
+    void this.deps.transitionThroughBoundary
+      .execute({
+        currentRoom: this.level,
+        exitId,
+      })
+      .then((plan) => {
+        this.transitionRoom(plan);
+      })
+      .catch((error: unknown) => {
+        console.error('Boundary transition failed:', error);
+      });
+  }
+
+  private triggerDoorTransition(doorId: string): void {
+    if (this.isTransitioning) {
+      return;
+    }
+
+    void this.deps.transitionThroughDoor
+      .execute({
+        currentRoom: this.level,
+        doorId,
+      })
+      .then((plan) => {
+        this.transitionRoom(plan);
+      })
+      .catch((error: unknown) => {
+        console.error('Room transition failed:', error);
+      });
+  }
+
+  private transitionRoom(plan: RoomTransitionPlan): void {
+    if (this.isTransitioning) {
+      return;
+    }
+
+    this.closeCharacterMenu();
+    this.closePauseMenu();
+    this.isTransitioning = true;
+    const camera = this.cameras.main;
+
+    camera.fadeOut(plan.fadeMs, 0, 0, 0);
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      void this.applyRoomTransition(plan)
+        .then(() => {
+          camera.fadeIn(plan.fadeMs, 0, 0, 0);
+          camera.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+            this.isTransitioning = false;
+          });
+        })
+        .catch((error: unknown) => {
+          this.isTransitioning = false;
+          console.error('Room transition failed:', error);
+        });
+    });
+  }
+
+  private async applyRoomTransition(plan: RoomTransitionPlan): Promise<void> {
+    this.teardownRoomContent();
+    await this.ensureRoomMapLoaded(plan.targetRoomId);
+
+    this.currentRoomId = plan.targetRoomId;
+    this.levelId = plan.targetRoomId;
+
+    const cacheKey = mapCacheKey(this.currentRoomId);
+    const cachedMap = this.cache.tilemap.get(cacheKey);
+    if (!cachedMap) {
+      throw new Error(`Tilemap "${cacheKey}" is not loaded.`);
+    }
+
+    this.level = this.deps.loadLevel.fromTiledMap(this.currentRoomId, cachedMap.data as TiledMapJson);
+    this.buildRoomLayers(cacheKey);
+    this.activatedCheckpointIds = new Set();
+
+    this.renderLevelObjects();
+    this.spawnEnemies();
+
+    const spawnPosition = this.deps.levelCollisionResolver.resolveSpawnPosition(
+      this.groundLayer!,
+      plan.entryPosition,
+    );
+    this.respawnPosition = spawnPosition;
+    this.spawnPlayer(spawnPosition);
+    this.facingDirection = plan.facing === 'right' ? 1 : -1;
+    this.playerSprite?.setFacing(this.facingDirection);
+
+    this.setupCameraFollow();
+    this.deps.cameraPort.reset();
+    this.registry.set('currentLevelId', this.currentRoomId);
+  }
+
+  private teardownRoomContent(): void {
+    this.groundLayer?.destroy();
+    this.decorLayer?.destroy();
+    this.tilemap?.destroy();
+    this.groundLayer = undefined;
+    this.decorLayer = undefined;
+    this.tilemap = undefined;
+    this.clearLevelObjectVisuals();
+    this.destroyEnemySprites();
+    this.destroyProjectileSprites();
+    this.destroyAttackFeedback();
+    this.deps.enemyPort.reset();
+  }
+
+  private ensureRoomMapLoaded(roomId: string): Promise<void> {
+    const cacheKey = mapCacheKey(roomId);
+
+    if (this.cache.tilemap.exists(cacheKey)) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      this.load.tilemapTiledJSON(cacheKey, `assets/maps/${roomId}.json`);
+      this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+        resolve();
+      });
+      this.load.once(Phaser.Loader.Events.FILE_LOAD_ERROR, () => {
+        reject(new Error(`Failed to load room map "${roomId}".`));
+      });
+      this.load.start();
+    });
   }
 
   private handleHazardDamage(): void {

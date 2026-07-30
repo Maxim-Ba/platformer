@@ -56,6 +56,10 @@ export class PhaserKeyboardInputAdapter implements IInputPort {
     return this.isAnyJustDown('attack');
   }
 
+  isInteractPressed(): boolean {
+    return this.isAnyJustDown('interact');
+  }
+
   isDashPressed(): boolean {
     const dashCodes = normalizeKeyCodes(this.getControls().keyBindings.dash);
     const hasShiftBinding = dashCodes.some((code) => isShiftKeyCode(code));

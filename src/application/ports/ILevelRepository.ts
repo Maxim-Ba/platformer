@@ -1,5 +1,5 @@
-import type { LevelDefinition } from '@domain/entities/LevelDefinition';
+import type { RoomDefinition } from '@domain/entities/RoomDefinition';
 
 export interface ILevelRepository {
-  load(levelId: string): Promise<LevelDefinition>;
+  load(levelId: string): Promise<RoomDefinition>;
 }

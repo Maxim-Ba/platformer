@@ -29,6 +29,11 @@ The system MUST define a typed `GameSave` structure with version, `savedAt` time
 - **WHEN** a game is saved
 - **THEN** `game.levelId` MUST be present so Load can resume at the correct level
 
+#### Scenario: Save contains current room for world playtest
+
+- **WHEN** a game is saved during room-based gameplay
+- **THEN** `game.currentRoomId` MUST be present with the active room id
+
 #### Scenario: Save contains character snapshots
 
 - **WHEN** a game is saved
@@ -152,3 +157,17 @@ When player returns to MainMenuScene from GameOverScene or LevelCompleteScene, t
 
 - **WHEN** player navigates to Main Menu from game over or level complete screens
 - **THEN** `SaveGame` MUST be called for the default slot before scene transition
+
+### Requirement: Load game restores current room
+
+`LoadGame` MUST restore the saved room id for room-based worlds when present in the save payload.
+
+#### Scenario: Restore saved room
+
+- **WHEN** `LoadGame` restores a save containing `game.currentRoomId`
+- **THEN** the result MUST include `currentRoomId` for `GameScene` to load that room
+
+#### Scenario: Legacy save without room id
+
+- **WHEN** `LoadGame` restores a save without `currentRoomId`
+- **THEN** `GameScene` MUST fall back to `game.levelId` as the room to load

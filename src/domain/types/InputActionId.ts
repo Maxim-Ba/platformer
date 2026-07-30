@@ -4,6 +4,7 @@ export type InputActionId =
   | 'jump'
   | 'dash'
   | 'attack'
+  | 'interact'
   | 'pause'
   | 'charMenuInventory'
   | 'charMenuSkills'

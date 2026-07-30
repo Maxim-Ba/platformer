@@ -2,11 +2,12 @@ import type {
   Checkpoint,
   EnemySpawn,
   HazardZone,
-  LevelDefinition,
   LevelExit,
   PlayerSpawn,
 } from '@domain/entities/LevelDefinition';
+import type { DoorDefinition, BoundaryExitDefinition, RoomDefinition } from '@domain/entities/RoomDefinition';
 import type { EnemyTypeId } from '@domain/entities/Enemy';
+import { isDoorFacing, isMapEdge, RoomTransitionRules } from '@domain/services/RoomTransitionRules';
 import { Vector2 } from '@domain/value-objects/Vector2';
 
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
@@ -18,7 +19,7 @@ const OBJECTS_LAYER_NAME = 'objects';
 export class TiledLevelRepository implements ILevelRepository {
   constructor(private readonly basePath = '/assets/maps') {}
 
-  async load(levelId: string): Promise<LevelDefinition> {
+  async load(levelId: string): Promise<RoomDefinition> {
     const response = await fetch(`${this.basePath}/${levelId}.json`);
     if (!response.ok) {
       throw new Error(`Failed to load level "${levelId}": ${response.status} ${response.statusText}`);
@@ -28,7 +29,7 @@ export class TiledLevelRepository implements ILevelRepository {
     return this.parseMap(levelId, map);
   }
 
-  parseMap(levelId: string, map: TiledMapJson): LevelDefinition {
+  parseMap(levelId: string, map: TiledMapJson): RoomDefinition {
     const objectsLayer = map.layers.find(
       (layer): layer is TiledObjectGroup =>
         layer.type === 'objectgroup' && layer.name === OBJECTS_LAYER_NAME,
@@ -58,6 +59,14 @@ export class TiledLevelRepository implements ILevelRepository {
       .filter((object) => object.type === 'enemy_spawn')
       .map((object) => this.toEnemySpawn(object));
 
+    const doors = objectsLayer.objects
+      .filter((object) => object.type === 'door')
+      .map((object) => this.toDoorDefinition(object));
+
+    const boundaryExits = objectsLayer.objects
+      .filter((object) => object.type === 'boundary_exit')
+      .map((object) => this.toBoundaryExitDefinition(object));
+
     return {
       id: levelId,
       bounds: {
@@ -71,6 +80,8 @@ export class TiledLevelRepository implements ILevelRepository {
       hazards,
       checkpoints,
       enemySpawns,
+      doors,
+      boundaryExits,
     };
   }
 
@@ -135,6 +146,59 @@ export class TiledLevelRepository implements ILevelRepository {
       position: this.objectFeetPosition(object),
       enemyType,
       ...(patrolDistance !== undefined ? { patrolDistance } : {}),
+    };
+  }
+
+  private toDoorDefinition(object: TiledObject): DoorDefinition {
+    const doorId = this.readStringProperty(object, 'doorId', `door-${object.id}`);
+    const targetRoom = this.readStringProperty(object, 'targetRoom', '');
+    const targetDoor = this.readStringProperty(object, 'targetDoor', '');
+    const facingRaw = this.readStringProperty(object, 'facing', 'right');
+    const facing = isDoorFacing(facingRaw) ? facingRaw : 'right';
+    const fadeMs =
+      this.readOptionalNumberProperty(object, 'fadeMs') ?? RoomTransitionRules.defaultFadeMs();
+
+    return {
+      kind: 'door',
+      id: doorId,
+      bounds: {
+        x: object.x,
+        y: object.y,
+        width: object.width,
+        height: object.height,
+      },
+      targetRoom,
+      targetDoor,
+      facing,
+      fadeMs,
+    };
+  }
+
+  private toBoundaryExitDefinition(object: TiledObject): BoundaryExitDefinition {
+    const exitId = this.readStringProperty(object, 'exitId', `exit-${object.id}`);
+    const targetRoom = this.readStringProperty(object, 'targetRoom', '');
+    const targetExitId = this.readStringProperty(object, 'targetExitId', '');
+    const edgeRaw = this.readStringProperty(object, 'edge', 'right');
+    const edge = isMapEdge(edgeRaw) ? edgeRaw : 'right';
+    const facingRaw = this.readStringProperty(object, 'facing', 'right');
+    const facing = isDoorFacing(facingRaw) ? facingRaw : 'right';
+    const fadeMs =
+      this.readOptionalNumberProperty(object, 'fadeMs') ?? RoomTransitionRules.defaultFadeMs();
+
+    return {
+      kind: 'boundary_exit',
+      id: exitId,
+      bounds: {
+        x: object.x,
+        y: object.y,
+        width: object.width,
+        height: object.height,
+      },
+      targetRoom,
+      targetExitId,
+      edge,
+      facing,
+      fadeMs,
     };
   }
 

@@ -5,6 +5,7 @@ import type { SkillsState } from '../value-objects/SkillsState';
 
 export interface GameSaveGameState {
   levelId: string;
+  currentRoomId?: string;
 }
 
 export interface GameSaveCharacterState {

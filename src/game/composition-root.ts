@@ -13,6 +13,7 @@ import type { IPlayerStatsPort } from '@application/ports/IPlayerStatsPort';
 import type { IProgressionPort } from '@application/ports/IProgressionPort';
 import type { ISavePort } from '@application/ports/ISavePort';
 import type { ISkillsPort } from '@application/ports/ISkillsPort';
+import type { ISettingsPort } from '@application/ports/ISettingsPort';
 import { AddExperience } from '@application/use-cases/AddExperience';
 import { AddItem } from '@application/use-cases/AddItem';
 import { ApplyDamage } from '@application/use-cases/ApplyDamage';
@@ -23,8 +24,9 @@ import { RemoveItem } from '@application/use-cases/RemoveItem';
 import { UpdateEnemies } from '@application/use-cases/UpdateEnemies';
 import { UpdatePlayerDash } from '@application/use-cases/UpdatePlayerDash';
 import { UpdatePlayerMovement } from '@application/use-cases/UpdatePlayerMovement';
+import { TransitionThroughDoor } from '@application/use-cases/TransitionThroughDoor';
+import { TransitionThroughBoundary } from '@application/use-cases/TransitionThroughBoundary';
 import { UpdateSettings } from '@application/use-cases/UpdateSettings';
-import type { ISettingsPort } from '@application/ports/ISettingsPort';
 import { ListSaveSlots } from '@application/use-cases/ListSaveSlots';
 import { LoadGame } from '@application/use-cases/LoadGame';
 import { SaveGame } from '@application/use-cases/SaveGame';
@@ -93,6 +95,8 @@ export interface SceneDependencies {
   executeMeleeAttack: ExecuteMeleeAttack;
   updateEnemies: UpdateEnemies;
   loadLevel: LoadLevel;
+  transitionThroughDoor: TransitionThroughDoor;
+  transitionThroughBoundary: TransitionThroughBoundary;
   levelCollisionResolver: LevelCollisionResolver;
 }
 
@@ -214,6 +218,8 @@ export function createSceneDependencies(scene: Phaser.Scene): SceneDependencies 
     executeMeleeAttack: new ExecuteMeleeAttack(combatPort, enemyPort),
     updateEnemies: new UpdateEnemies(enemyPort, healthPort, applyDamage),
     loadLevel: new LoadLevel(levelRepository),
+    transitionThroughDoor: new TransitionThroughDoor(levelRepository),
+    transitionThroughBoundary: new TransitionThroughBoundary(levelRepository),
     levelCollisionResolver: new LevelCollisionResolver(),
   };
 }

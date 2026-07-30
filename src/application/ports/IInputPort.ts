@@ -3,5 +3,6 @@ export interface IInputPort {
   isRightPressed(): boolean;
   isJumpPressed(): boolean;
   isAttackPressed(): boolean;
+  isInteractPressed(): boolean;
   isDashPressed(): boolean;
 }

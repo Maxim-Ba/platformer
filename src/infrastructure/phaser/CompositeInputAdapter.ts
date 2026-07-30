@@ -24,6 +24,10 @@ export class CompositeInputAdapter implements IInputPort {
     return this.keyboard.isAttackPressed() || this.gamepad.isAttackPressed();
   }
 
+  isInteractPressed(): boolean {
+    return this.keyboard.isInteractPressed() || this.gamepad.isInteractPressed();
+  }
+
   isDashPressed(): boolean {
     return this.keyboard.isDashPressed() || this.gamepad.isDashPressed();
   }
