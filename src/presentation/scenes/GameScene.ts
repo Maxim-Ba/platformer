@@ -3,7 +3,6 @@ import type { AddExperience } from '@application/use-cases/AddExperience';
 import type { IInputPort } from '@application/ports/IInputPort';
 import type { LevelDefinition } from '@domain/entities/LevelDefinition';
 import { HAZARD_DAMAGE } from '@domain/constants/health';
-import { ENEMY_KILL_XP } from '@domain/constants/combat';
 import { CombatRules } from '@domain/services/CombatRules';
 import { COYOTE_TIME_MS } from '@domain/constants/movement';
 import { DEFAULT_SAVE_SLOT_ID } from '@domain/constants/save';
@@ -26,6 +25,7 @@ import { SceneKeys } from '@game/scene-keys';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import { EnemySprite } from '@presentation/entities/EnemySprite';
+import { ProjectileSprite } from '@presentation/entities/ProjectileSprite';
 import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
 import { createGameHud, type GameHud } from '@presentation/ui/hud/GameHud';
 import {
@@ -93,6 +93,7 @@ export class GameScene extends Phaser.Scene {
   private hud?: GameHud;
   private facingDirection: -1 | 1 = 1;
   private enemySprites = new Map<string, EnemySprite>();
+  private projectileSprites = new Map<string, ProjectileSprite>();
   private attackHitboxFeedback?: Phaser.GameObjects.Rectangle;
   private readonly combatRules = new CombatRules();
 
@@ -214,6 +215,7 @@ export class GameScene extends Phaser.Scene {
     this.deps.dashPort.reset();
     this.deps.enemyPort.reset();
     this.destroyEnemySprites();
+    this.destroyProjectileSprites();
     this.destroyAttackFeedback();
     this.facingDirection = 1;
     this.isRespawning = false;
@@ -503,7 +505,12 @@ export class GameScene extends Phaser.Scene {
     this.deps.enemyPort.spawnEnemies(this.level.enemySpawns);
 
     for (const enemy of this.deps.enemyPort.getEnemies()) {
-      const sprite = new EnemySprite(this, enemy.position.x, enemy.position.y);
+      const sprite = EnemySprite.create(
+        this,
+        enemy.archetypeId,
+        enemy.position.x,
+        enemy.position.y,
+      );
       this.enemySprites.set(enemy.id, sprite);
     }
   }
@@ -524,9 +531,9 @@ export class GameScene extends Phaser.Scene {
       deltaMs: delta,
     });
 
-    for (const enemyId of attackResult.enemiesKilled) {
-      this.addExperience.execute(ENEMY_KILL_XP);
-      this.destroyEnemySprite(enemyId);
+    for (const kill of attackResult.enemiesKilled) {
+      this.addExperience.execute(kill.killXp);
+      this.destroyEnemySprite(kill.enemyId);
     }
 
     this.syncEnemySprites();
@@ -537,7 +544,7 @@ export class GameScene extends Phaser.Scene {
       deltaMs: delta,
     });
 
-    if (enemyUpdateResult.contactDamageApplied) {
+    if (enemyUpdateResult.contactDamageApplied || enemyUpdateResult.projectileDamageApplied) {
       if (!enemyUpdateResult.survived) {
         this.goToGameOver();
         return;
@@ -546,6 +553,9 @@ export class GameScene extends Phaser.Scene {
       this.respawnPlayer();
       return;
     }
+
+    this.syncEnemySprites();
+    this.syncProjectileSprites();
   }
 
   private syncEnemySprites(): void {
@@ -553,7 +563,12 @@ export class GameScene extends Phaser.Scene {
       const sprite = this.enemySprites.get(enemy.id);
 
       if (!sprite) {
-        const created = new EnemySprite(this, enemy.position.x, enemy.position.y);
+        const created = EnemySprite.create(
+          this,
+          enemy.archetypeId,
+          enemy.position.x,
+          enemy.position.y,
+        );
         this.enemySprites.set(enemy.id, created);
         created.syncFromState(enemy);
         continue;
@@ -561,6 +576,42 @@ export class GameScene extends Phaser.Scene {
 
       sprite.syncFromState(enemy);
     }
+  }
+
+  private syncProjectileSprites(): void {
+    const activeIds = new Set(this.deps.enemyPort.getProjectiles().map((p) => p.id));
+
+    for (const [id, sprite] of this.projectileSprites) {
+      if (!activeIds.has(id)) {
+        sprite.destroy();
+        this.projectileSprites.delete(id);
+      }
+    }
+
+    for (const projectile of this.deps.enemyPort.getProjectiles()) {
+      const sprite = this.projectileSprites.get(projectile.id);
+
+      if (!sprite) {
+        const created = new ProjectileSprite(
+          this,
+          projectile.position.x,
+          projectile.position.y,
+        );
+        this.projectileSprites.set(projectile.id, created);
+        created.syncFromState(projectile);
+        continue;
+      }
+
+      sprite.syncFromState(projectile);
+    }
+  }
+
+  private destroyProjectileSprites(): void {
+    for (const sprite of this.projectileSprites.values()) {
+      sprite.destroy();
+    }
+
+    this.projectileSprites.clear();
   }
 
   private updateAttackFeedback(): void {

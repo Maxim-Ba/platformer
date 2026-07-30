@@ -1,10 +1,11 @@
 import { MELEE_DAMAGE } from '@domain/constants/combat';
+import { resolveArchetype } from '@domain/constants/enemies';
 import { CombatRules } from '@domain/services/CombatRules';
+import { EnemyRules } from '@domain/services/EnemyRules';
 import type { Vector2 } from '@domain/value-objects/Vector2';
 
 import type { ICombatPort } from '../ports/ICombatPort';
 import type { IEnemyPort } from '../ports/IEnemyPort';
-import { EnemyRules } from '@domain/services/EnemyRules';
 
 export interface ExecuteMeleeAttackInput {
   readonly playerPosition: Vector2;
@@ -13,10 +14,15 @@ export interface ExecuteMeleeAttackInput {
   readonly deltaMs: number;
 }
 
+export interface EnemyKillReward {
+  readonly enemyId: string;
+  readonly killXp: number;
+}
+
 export interface ExecuteMeleeAttackResult {
   readonly attackStarted: boolean;
   readonly enemiesHit: readonly string[];
-  readonly enemiesKilled: readonly string[];
+  readonly enemiesKilled: readonly EnemyKillReward[];
 }
 
 export class ExecuteMeleeAttack {
@@ -55,10 +61,11 @@ export class ExecuteMeleeAttack {
     );
 
     const enemiesHit: string[] = [];
-    const enemiesKilled: string[] = [];
+    const enemiesKilled: EnemyKillReward[] = [];
 
     for (const enemy of this.enemyPort.getEnemies()) {
-      const enemyAabb = this.enemyRules.getEnemyAabb(enemy);
+      const archetype = resolveArchetype(enemy.archetypeId);
+      const enemyAabb = this.enemyRules.getEnemyAabb(enemy, archetype);
 
       if (
         !this.combatRules.hitboxOverlapsAabb(
@@ -75,7 +82,7 @@ export class ExecuteMeleeAttack {
       enemiesHit.push(enemy.id);
 
       if (this.enemyPort.applyDamage(enemy.id, MELEE_DAMAGE)) {
-        enemiesKilled.push(enemy.id);
+        enemiesKilled.push({ enemyId: enemy.id, killXp: archetype.killXp });
       }
     }
 

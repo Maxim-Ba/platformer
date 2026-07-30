@@ -50,7 +50,24 @@ export type { MovementConfig } from './services/MovementRules';
 export { HealthRules } from './services/HealthRules';
 export { CombatRules } from './services/CombatRules';
 export { DashRules } from './services/DashRules';
-export { EnemyRules } from './services/EnemyRules';
+export type { Enemy, EnemyArchetype, EnemyTypeId, MovementBehaviorId, AttackBehaviorId } from './entities/Enemy';
+export type { EnemyState } from './entities/EnemyState';
+export type { ProjectileState, ProjectileSpawn } from './entities/ProjectileState';
+export {
+  ENEMY_ARCHETYPES,
+  resolveArchetype,
+  createEnemyFromSpawn,
+  getDefaultPatrolDistance,
+} from './constants/enemies';
+export {
+  PROJECTILE_SPEED,
+  PROJECTILE_DAMAGE,
+  PROJECTILE_LIFETIME_MS,
+  CAST_INTERVAL_MS,
+  CASTER_AGGRO_RANGE,
+  MAX_PROJECTILES_PER_CASTER,
+} from './constants/projectiles';
+export { EnemyRules, ProjectileRules } from './services/EnemyRules';
 export { SettingsRules } from './services/SettingsRules';
 export { ProgressionRules } from './services/ProgressionRules';
 export { InventoryRules } from './services/InventoryRules';

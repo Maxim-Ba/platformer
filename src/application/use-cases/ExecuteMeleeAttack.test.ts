@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   ATTACK_ACTIVE_MS,
   ATTACK_COOLDOWN_MS,
+  MELEE_DAMAGE,
 } from '@domain/constants/combat';
+import { ENEMY_ARCHETYPES } from '@domain/constants/enemies';
 import type { EnemySpawn } from '@domain/entities/LevelDefinition';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { InMemoryCombatAdapter } from '@infrastructure/adapters/InMemoryCombatAdapter';
@@ -12,11 +14,19 @@ import { InMemoryEnemyAdapter } from '@infrastructure/adapters/InMemoryEnemyAdap
 import { ExecuteMeleeAttack } from './ExecuteMeleeAttack';
 
 describe('ExecuteMeleeAttack', () => {
-  const spawn: EnemySpawn = {
+  const gruntSpawn: EnemySpawn = {
     kind: 'enemy_spawn',
-    id: 'enemy-1',
+    id: 'grunt-1',
     position: new Vector2(130, 200),
+    enemyType: 'grunt',
     patrolDistance: 120,
+  };
+
+  const flyerSpawn: EnemySpawn = {
+    kind: 'enemy_spawn',
+    id: 'flyer-1',
+    position: new Vector2(130, 200),
+    enemyType: 'flyer',
   };
 
   it('starts attack when input is pressed and cooldown elapsed', () => {
@@ -57,10 +67,40 @@ describe('ExecuteMeleeAttack', () => {
     expect(result.attackStarted).toBe(false);
   });
 
-  it('damages overlapping enemy during active attack window', () => {
+  it('requires two hits to kill grunt with 2 HP', () => {
     const combatPort = new InMemoryCombatAdapter();
     const enemyPort = new InMemoryEnemyAdapter();
-    enemyPort.spawnEnemies([spawn]);
+    enemyPort.spawnEnemies([gruntSpawn]);
+    const useCase = new ExecuteMeleeAttack(combatPort, enemyPort);
+
+    const first = useCase.execute({
+      playerPosition: new Vector2(100, 200),
+      facingDirection: 1,
+      attackPressed: true,
+      deltaMs: 16,
+    });
+
+    expect(first.enemiesHit).toContain('grunt-1');
+    expect(first.enemiesKilled).toHaveLength(0);
+    expect(enemyPort.getEnemies()[0]?.hp).toBe(ENEMY_ARCHETYPES.grunt.maxHp - MELEE_DAMAGE);
+
+    combatPort.tick(ATTACK_ACTIVE_MS + ATTACK_COOLDOWN_MS);
+
+    const second = useCase.execute({
+      playerPosition: new Vector2(100, 200),
+      facingDirection: 1,
+      attackPressed: true,
+      deltaMs: 16,
+    });
+
+    expect(second.enemiesKilled).toEqual([{ enemyId: 'grunt-1', killXp: 25 }]);
+    expect(enemyPort.getEnemies()).toHaveLength(0);
+  });
+
+  it('kills flyer in one hit using smaller hitbox', () => {
+    const combatPort = new InMemoryCombatAdapter();
+    const enemyPort = new InMemoryEnemyAdapter();
+    enemyPort.spawnEnemies([flyerSpawn]);
     const useCase = new ExecuteMeleeAttack(combatPort, enemyPort);
 
     const result = useCase.execute({
@@ -70,8 +110,8 @@ describe('ExecuteMeleeAttack', () => {
       deltaMs: 16,
     });
 
-    expect(result.enemiesHit).toContain('enemy-1');
-    expect(result.enemiesKilled).toContain('enemy-1');
+    expect(result.enemiesHit).toContain('flyer-1');
+    expect(result.enemiesKilled).toEqual([{ enemyId: 'flyer-1', killXp: 30 }]);
     expect(enemyPort.getEnemies()).toHaveLength(0);
   });
 
@@ -80,7 +120,7 @@ describe('ExecuteMeleeAttack', () => {
     const enemyPort = new InMemoryEnemyAdapter();
     enemyPort.spawnEnemies([
       {
-        ...spawn,
+        ...gruntSpawn,
         position: new Vector2(500, 200),
       },
     ]);

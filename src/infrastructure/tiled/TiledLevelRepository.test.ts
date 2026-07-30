@@ -91,7 +91,7 @@ describe('TiledLevelRepository', () => {
     expect(level.enemySpawns).toHaveLength(0);
   });
 
-  it('parses enemy_spawn with optional patrolDistance', () => {
+  it('parses enemy_spawn with enemyType and optional patrolDistance', () => {
     const repository = new TiledLevelRepository();
     const objectsLayer = sampleMap.layers.find(
       (layer): layer is Extract<typeof layer, { type: 'objectgroup' }> =>
@@ -107,13 +107,16 @@ describe('TiledLevelRepository', () => {
             ...objectsLayer.objects,
             {
               id: 5,
-              name: 'Patrol Enemy',
+              name: 'Grunt',
               type: 'enemy_spawn',
               x: 160,
               y: 96,
               width: 32,
               height: 32,
-              properties: [{ name: 'patrolDistance', type: 'int', value: 80 }],
+              properties: [
+                { name: 'enemyType', type: 'string', value: 'grunt' },
+                { name: 'patrolDistance', type: 'int', value: 80 },
+              ],
             },
           ],
         },
@@ -127,8 +130,87 @@ describe('TiledLevelRepository', () => {
       kind: 'enemy_spawn',
       id: 'enemy-5',
       position: new Vector2(176, 128),
+      enemyType: 'grunt',
       patrolDistance: 80,
     });
+  });
+
+  it('defaults enemyType to grunt when property is missing', () => {
+    const repository = new TiledLevelRepository();
+    const objectsLayer = sampleMap.layers.find(
+      (layer): layer is Extract<typeof layer, { type: 'objectgroup' }> =>
+        layer.type === 'objectgroup',
+    )!;
+    const mapWithEnemy: TiledMapJson = {
+      ...sampleMap,
+      layers: [
+        {
+          name: 'objects',
+          type: 'objectgroup',
+          objects: [
+            ...objectsLayer.objects,
+            {
+              id: 6,
+              name: 'Legacy Enemy',
+              type: 'enemy_spawn',
+              x: 200,
+              y: 96,
+              width: 32,
+              height: 32,
+            },
+          ],
+        },
+      ],
+    };
+
+    const level = repository.parseMap('level-legacy', mapWithEnemy);
+
+    expect(level.enemySpawns[0]?.enemyType).toBe('grunt');
+    expect(level.enemySpawns[0]?.patrolDistance).toBeUndefined();
+  });
+
+  it('parses flyer and caster enemy types', () => {
+    const repository = new TiledLevelRepository();
+    const objectsLayer = sampleMap.layers.find(
+      (layer): layer is Extract<typeof layer, { type: 'objectgroup' }> =>
+        layer.type === 'objectgroup',
+    )!;
+    const mapWithEnemies: TiledMapJson = {
+      ...sampleMap,
+      layers: [
+        {
+          name: 'objects',
+          type: 'objectgroup',
+          objects: [
+            ...objectsLayer.objects,
+            {
+              id: 7,
+              name: 'Flyer',
+              type: 'enemy_spawn',
+              x: 160,
+              y: 64,
+              width: 24,
+              height: 24,
+              properties: [{ name: 'enemyType', type: 'string', value: 'flyer' }],
+            },
+            {
+              id: 8,
+              name: 'Caster',
+              type: 'enemy_spawn',
+              x: 200,
+              y: 96,
+              width: 28,
+              height: 40,
+              properties: [{ name: 'enemyType', type: 'string', value: 'caster' }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const level = repository.parseMap('level-types', mapWithEnemies);
+
+    expect(level.enemySpawns.map((spawn) => spawn.enemyType)).toEqual(['flyer', 'caster']);
   });
 
   it('throws when player_spawn is missing', () => {

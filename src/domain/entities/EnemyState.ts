@@ -1,11 +1,6 @@
-import type { Vector2 } from '../value-objects/Vector2';
+import type { Enemy } from './Enemy';
 
-export interface EnemyState {
-  readonly id: string;
-  readonly position: Vector2;
-  readonly hp: number;
-  readonly patrolDirection: -1 | 1;
-  readonly patrolMinX: number;
-  readonly patrolMaxX: number;
-  readonly speed: number;
+export interface EnemyState extends Enemy {
+  /** Y-центр hover для fly-hover behavior */
+  readonly hoverCenterY: number;
 }

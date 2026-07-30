@@ -1,3 +1,4 @@
+import type { EnemyTypeId } from './Enemy';
 import type { Vector2 } from '../value-objects/Vector2';
 
 export interface LevelBounds {
@@ -38,7 +39,8 @@ export interface EnemySpawn {
   readonly kind: 'enemy_spawn';
   readonly id: string;
   readonly position: Vector2;
-  readonly patrolDistance: number;
+  readonly enemyType: EnemyTypeId;
+  readonly patrolDistance?: number;
 }
 
 export type LevelObject = PlayerSpawn | LevelExit | HazardZone | Checkpoint | EnemySpawn;

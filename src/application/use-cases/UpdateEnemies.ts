@@ -1,5 +1,7 @@
 import { ENEMY_CONTACT_DAMAGE } from '@domain/constants/combat';
-import { EnemyRules } from '@domain/services/EnemyRules';
+import { resolveArchetype } from '@domain/constants/enemies';
+import { getAttackBehavior, getMovementBehavior } from '@domain/enemy-behaviors/behaviorRegistry';
+import { EnemyRules, ProjectileRules } from '@domain/services/EnemyRules';
 import type { Vector2 } from '@domain/value-objects/Vector2';
 
 import type { IEnemyPort } from '../ports/IEnemyPort';
@@ -13,6 +15,7 @@ export interface UpdateEnemiesInput {
 
 export interface UpdateEnemiesResult {
   readonly contactDamageApplied: boolean;
+  readonly projectileDamageApplied: boolean;
   readonly survived: boolean;
 }
 
@@ -22,22 +25,62 @@ export class UpdateEnemies {
     private readonly healthPort: IHealthPort,
     private readonly applyDamage: ApplyDamage,
     private readonly enemyRules: EnemyRules = new EnemyRules(),
+    private readonly projectileRules: ProjectileRules = new ProjectileRules(),
   ) {}
 
   execute(input: UpdateEnemiesInput): UpdateEnemiesResult {
-    this.enemyPort.update(input.deltaMs);
+    for (const enemy of this.enemyPort.getEnemies()) {
+      const archetype = resolveArchetype(enemy.archetypeId);
+      const movement = getMovementBehavior(archetype.movementBehaviorId);
+
+      const afterMovement = movement(enemy, {
+        deltaMs: input.deltaMs,
+        patrolMinX: enemy.patrolMinX,
+        patrolMaxX: enemy.patrolMaxX,
+        speed: archetype.speed,
+        floorY: enemy.hoverCenterY,
+      });
+
+      const activeProjectiles = this.enemyPort
+        .getProjectiles()
+        .filter((projectile) => projectile.ownerEnemyId === enemy.id).length;
+
+      const attack = getAttackBehavior(archetype.attackBehaviorId);
+      const attackResult = attack(afterMovement, {
+        deltaMs: input.deltaMs,
+        playerPosition: input.playerPosition,
+        enemyPosition: afterMovement.position,
+        activeProjectileCount: activeProjectiles,
+      }, archetype);
+
+      this.enemyPort.updateEnemy(attackResult.state);
+
+      if (attackResult.spawnedProjectiles.length > 0) {
+        this.enemyPort.addProjectiles(attackResult.spawnedProjectiles);
+      }
+    }
+
+    this.enemyPort.tickProjectiles(input.deltaMs);
 
     if (this.healthPort.isInvulnerable()) {
       return {
         contactDamageApplied: false,
+        projectileDamageApplied: false,
         survived: true,
       };
     }
 
     for (const enemy of this.enemyPort.getEnemies()) {
+      const archetype = resolveArchetype(enemy.archetypeId);
+
+      if (archetype.attackBehaviorId !== 'contact') {
+        continue;
+      }
+
       if (
         this.enemyRules.overlapsPlayer(
           enemy,
+          archetype,
           input.playerPosition.x,
           input.playerPosition.y,
         )
@@ -46,6 +89,26 @@ export class UpdateEnemies {
 
         return {
           contactDamageApplied: true,
+          projectileDamageApplied: false,
+          survived: result.survived,
+        };
+      }
+    }
+
+    for (const projectile of this.enemyPort.getProjectiles()) {
+      if (
+        this.projectileRules.overlapsPlayer(
+          projectile,
+          input.playerPosition.x,
+          input.playerPosition.y,
+        )
+      ) {
+        this.enemyPort.removeProjectile(projectile.id);
+        const result = this.applyDamage.execute(projectile.damage);
+
+        return {
+          contactDamageApplied: false,
+          projectileDamageApplied: true,
           survived: result.survived,
         };
       }
@@ -53,6 +116,7 @@ export class UpdateEnemies {
 
     return {
       contactDamageApplied: false,
+      projectileDamageApplied: false,
       survived: true,
     };
   }

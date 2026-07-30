@@ -51,7 +51,7 @@ describe('SettingsRules', () => {
 
   it('merges key binding patch for known action ids', () => {
     const merged = rules.merge(DEFAULT_SETTINGS, {
-      controls: { keyBindings: { jump: 'KeyW' } },
+      controls: { keyBindings: { ...DEFAULT_KEY_BINDINGS, jump: 'KeyW' } },
     });
 
     expect(merged.controls.keyBindings.jump).toBe('KeyW');
@@ -60,7 +60,7 @@ describe('SettingsRules', () => {
 
   it('rejects duplicate key binding patches', () => {
     const merged = rules.merge(DEFAULT_SETTINGS, {
-      controls: { keyBindings: { jump: 'KeyA' } },
+      controls: { keyBindings: { ...DEFAULT_KEY_BINDINGS, jump: 'KeyA' } },
     });
 
     expect(merged.controls.keyBindings.jump).toBe(DEFAULT_KEY_BINDINGS.jump);
@@ -112,7 +112,7 @@ describe('SettingsRules', () => {
       },
     });
     const merged = rules.merge(withGamepad, {
-      controls: { keyBindings: { jump: 'KeyW' } },
+      controls: { keyBindings: { ...DEFAULT_KEY_BINDINGS, jump: 'KeyW' } },
     });
 
     expect(merged.controls.gamepadBindings).toEqual({ jump: { kind: 'button', index: 0 } });

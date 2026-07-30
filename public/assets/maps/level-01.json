@@ -134,9 +134,14 @@
                 {
                  "height":32,
                  "id":5,
-                 "name":"Patrol Enemy",
+                 "name":"Grunt Enemy",
                  "opacity":1,
                  "properties":[
+                        {
+                         "name":"enemyType",
+                         "type":"string",
+                         "value":"grunt"
+                        },
                         {
                          "name":"patrolDistance",
                          "type":"int",
@@ -148,6 +153,52 @@
                  "width":32,
                  "x":288,
                  "y":512
+                },
+                {
+                 "height":24,
+                 "id":6,
+                 "name":"Flyer Enemy",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"enemyType",
+                         "type":"string",
+                         "value":"flyer"
+                        },
+                        {
+                         "name":"patrolDistance",
+                         "type":"int",
+                         "value":160
+                        }],
+                 "rotation":0,
+                 "type":"enemy_spawn",
+                 "visible":true,
+                 "width":24,
+                 "x":560,
+                 "y":400
+                },
+                {
+                 "height":40,
+                 "id":7,
+                 "name":"Caster Enemy",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"enemyType",
+                         "type":"string",
+                         "value":"caster"
+                        },
+                        {
+                         "name":"patrolDistance",
+                         "type":"int",
+                         "value":0
+                        }],
+                 "rotation":0,
+                 "type":"enemy_spawn",
+                 "visible":true,
+                 "width":28,
+                 "x":800,
+                 "y":512
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -156,7 +207,7 @@
          "y":0
         }],
  "nextlayerid":4,
- "nextobjectid":7,
+ "nextobjectid":8,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

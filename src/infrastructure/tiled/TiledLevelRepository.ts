@@ -6,7 +6,7 @@ import type {
   LevelExit,
   PlayerSpawn,
 } from '@domain/entities/LevelDefinition';
-import { ENEMY_DEFAULT_PATROL_DISTANCE } from '@domain/constants/combat';
+import type { EnemyTypeId } from '@domain/entities/Enemy';
 import { Vector2 } from '@domain/value-objects/Vector2';
 
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
@@ -126,23 +126,40 @@ export class TiledLevelRepository implements ILevelRepository {
   }
 
   private toEnemySpawn(object: TiledObject): EnemySpawn {
+    const enemyType = this.readStringProperty(object, 'enemyType', 'grunt') as EnemyTypeId;
+    const patrolDistance = this.readOptionalNumberProperty(object, 'patrolDistance');
+
     return {
       kind: 'enemy_spawn',
       id: `enemy-${object.id}`,
       position: this.objectFeetPosition(object),
-      patrolDistance: this.readNumberProperty(object, 'patrolDistance', ENEMY_DEFAULT_PATROL_DISTANCE),
+      enemyType,
+      ...(patrolDistance !== undefined ? { patrolDistance } : {}),
     };
   }
 
-  private readNumberProperty(
+  private readStringProperty(
     object: TiledObject,
     name: string,
-    fallback: number,
-  ): number {
+    fallback: string,
+  ): string {
+    const property = object.properties?.find((entry) => entry.name === name);
+
+    if (!property || typeof property.value !== 'string') {
+      return fallback;
+    }
+
+    return property.value;
+  }
+
+  private readOptionalNumberProperty(
+    object: TiledObject,
+    name: string,
+  ): number | undefined {
     const property = object.properties?.find((entry) => entry.name === name);
 
     if (!property || typeof property.value !== 'number') {
-      return fallback;
+      return undefined;
     }
 
     return property.value;
