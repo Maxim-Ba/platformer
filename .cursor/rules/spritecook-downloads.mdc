@@ -1,0 +1,30 @@
+---
+description: После генерации анимаций в SpriteCook — просить пользователя скачать spritesheet вручную
+alwaysApply: true
+---
+
+# SpriteCook: скачивание анимаций
+
+После генерации анимаций через SpriteCook MCP **не пытайся скачивать** signed URL из терминала, скриптами или браузерной автоматизации. Локальная сеть/прокси часто не достучится до `api.spritecook.ai`.
+
+## Что делать
+
+1. Сообщи пользователю, что генерация завершена, и **попроси скачать spritesheet** (формат PNG, горизонтальная полоса кадров) из SpriteCook.
+2. Укажи точные пути для сохранения в репозитории:
+
+| Анимация | Файл |
+|----------|------|
+| run | `public/assets/sprite/player-run.png` |
+| jump | `public/assets/sprite/player-jump.png` |
+| fall | `public/assets/sprite/player-fall.png` |
+| attack | `public/assets/sprite/player-attack.png` |
+
+3. Запиши `asset_id` и signed URL в `spritecook-assets.json` (если ещё не записаны).
+4. После подтверждения пользователя, что файлы на месте:
+   - пересобери sheet: `python3 scripts/build-player-sheet.py`
+   - обнови `PLAYER_ANIM_FRAME_RANGES` в `src/presentation/animation/playerSheetConfig.ts`
+
+## Чего не делать
+
+- Не создавай обходные скрипты/серверы для автоматического скачивания.
+- Не трать время на curl/fetch/PowerShell, если первая попытка не удалась из‑за сети или прокси.

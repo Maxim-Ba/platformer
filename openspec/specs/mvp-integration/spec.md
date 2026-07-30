@@ -15,6 +15,11 @@ The MVP MUST display a visible player representation (sprite or placeholder) syn
 - **WHEN** GameScene is running
 - **THEN** a player sprite or equivalent MUST be visible and track movement state
 
+#### Scenario: Animated movement feedback
+
+- **WHEN** player moves, jumps, or falls
+- **THEN** player sprite MUST display distinct frame animations for idle, run, jump, and fall states
+
 ### Requirement: Camera follow
 
 The game MUST follow the player with a smooth camera that keeps the player centered in the viewport, applies follow slack when horizontal movement direction changes sharply, and constrains scroll to level world bounds.

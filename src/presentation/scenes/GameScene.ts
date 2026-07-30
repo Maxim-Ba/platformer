@@ -204,7 +204,10 @@ export class GameScene extends Phaser.Scene {
     this.updateFacingDirection();
     this.handleCombat(delta);
 
-    this.playerSprite.syncFromState(this.playerState);
+    const attackState = this.deps.combatPort.getAttackState();
+    this.playerSprite.syncFromState(this.playerState, {
+      isAttacking: this.combatRules.isAttackActive(attackState),
+    });
     this.playerSprite.setDashing(dashState.isDashing);
     this.deps.physicsPort.syncFromDomain(PLAYER_ENTITY_ID, this.playerState);
     this.deps.cameraPort.update(delta);
@@ -794,7 +797,13 @@ export class GameScene extends Phaser.Scene {
       this.playerSprite.sprite.destroy();
     }
 
-    this.playerSprite = new PlayerSprite(this, position.x, position.y);
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    this.playerSprite = new PlayerSprite(
+      this,
+      position.x,
+      position.y,
+      appDependencies.settingsPort,
+    );
     this.playerSprite.sprite.setDepth(3);
 
     this.playerState = new PlayerState(

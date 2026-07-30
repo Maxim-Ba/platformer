@@ -1,5 +1,10 @@
 import { FOUNDATION_ASSETS } from '@game/asset-keys';
 import { SceneKeys } from '@game/scene-keys';
+import { getAppDependenciesFromRegistry } from '@game/scene-context';
+import {
+  registerPlayerAnimations,
+  resolvePlayerTextureKey,
+} from '@presentation/animation/PlayerAnimationRegistry';
 import Phaser from 'phaser';
 
 const PROGRESS_BAR_WIDTH = 300;
@@ -20,6 +25,11 @@ export class PreloadScene extends Phaser.Scene {
     for (const asset of FOUNDATION_ASSETS) {
       if (asset.type === 'svg') {
         this.load.svg(asset.key, asset.path);
+      } else if (asset.type === 'spritesheet') {
+        this.load.spritesheet(asset.key, asset.path, {
+          frameWidth: asset.frameWidth,
+          frameHeight: asset.frameHeight,
+        });
       } else {
         this.load.image(asset.key, asset.path);
       }
@@ -31,6 +41,10 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
+    const appDependencies = getAppDependenciesFromRegistry(this);
+    const textureKey = resolvePlayerTextureKey(appDependencies.settingsPort);
+    registerPlayerAnimations(this, textureKey);
+
     this.scene.start(SceneKeys.MainMenu);
   }
 

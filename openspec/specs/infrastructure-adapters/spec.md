@@ -81,6 +81,11 @@ Presentation layer MUST provide `PlayerSprite` that reflects domain/use-case pla
 - **WHEN** UpdatePlayerMovement produces updated PlayerState
 - **THEN** PlayerSprite MUST update its visual position and facing from that state
 
+#### Scenario: Animation playback from state
+
+- **WHEN** PlayerSprite syncs from PlayerState
+- **THEN** it MUST play the resolved frame animation (idle, run, jump, fall) instead of placeholder scale or tint effects
+
 ### Requirement: Composition root wiring
 
 Adapters MUST be registered in composition root and injected into scenes that consume them.

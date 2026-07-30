@@ -1,0 +1,40 @@
+{
+  "assets": [
+    {
+      "asset_id": "e885968f-c6b3-4246-8439-194f6863fc9a",
+      "label": "platformer-player-base",
+      "role": "base_character"
+    },
+    {
+      "asset_id": "295e8bdc-d4bd-4195-8bf7-f2f1746182b8",
+      "label": "platformer-player-idle",
+      "role": "animation_idle",
+      "local_path": "public/assets/sprite/player-idle.png"
+    },
+    {
+      "asset_id": "fed0a14d-3b12-4b38-a1c8-adb13745421d",
+      "label": "platformer-player-run",
+      "role": "animation_run",
+      "local_path": "public/assets/sprite/player-run.png"
+    },
+    {
+      "asset_id": "945ccaa7-4b73-4c64-9a95-e006369d66c0",
+      "label": "platformer-player-jump",
+      "role": "animation_jump",
+      "local_path": "public/assets/sprite/player-jump.png"
+    },
+    {
+      "asset_id": "9868e9a4-fb2e-4015-acc7-9da080e71623",
+      "label": "platformer-player-fall",
+      "role": "animation_fall",
+      "local_path": "public/assets/sprite/player-fall.png"
+    },
+    {
+      "asset_id": "9345af40-1cba-4a74-8b4a-bfa812e68b53",
+      "label": "platformer-player-attack",
+      "role": "animation_attack",
+      "local_path": "public/assets/sprite/player-attack.png"
+    }
+  ],
+  "animation_run_id": "06e4f223-3785-4e3c-a3c3-e167034061cb"
+}

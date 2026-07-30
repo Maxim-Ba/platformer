@@ -1,20 +1,38 @@
 import type { PlayerState } from '@domain/value-objects/PlayerState';
-import { AssetKeys } from '@game/asset-keys';
+import type { ISettingsPort } from '@application/ports/ISettingsPort';
 import Phaser from 'phaser';
 
-const RUN_SPEED_THRESHOLD = 10;
+import {
+  resolvePlayerTextureKey,
+  toPhaserAnimKey,
+} from '@presentation/animation/PlayerAnimationRegistry';
+import {
+  type AnimationResolveContext,
+  resolvePlayerAnimation,
+} from '@presentation/animation/resolvePlayerAnimation';
+
 const DASH_TINT = 0x88ccff;
 const DASH_ALPHA = 0.6;
+const PLAYER_DISPLAY_WIDTH = 32;
+const PLAYER_DISPLAY_HEIGHT = 48;
 
 export class PlayerSprite {
   readonly sprite: Phaser.GameObjects.Sprite;
   private facingDirection: -1 | 1 = 1;
   private isDashing = false;
+  private currentAnim: string | null = null;
+  private readonly textureKey: string;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
-    this.sprite = scene.add.sprite(x, y, AssetKeys.Player);
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    settingsPort?: ISettingsPort,
+  ) {
+    this.textureKey = resolvePlayerTextureKey(settingsPort);
+    this.sprite = scene.add.sprite(x, y, this.textureKey);
     this.sprite.setOrigin(0.5, 1);
-    this.sprite.setDisplaySize(32, 48);
+    this.sprite.setDisplaySize(PLAYER_DISPLAY_WIDTH, PLAYER_DISPLAY_HEIGHT);
   }
 
   setFacing(direction: -1 | 1): void {
@@ -36,9 +54,10 @@ export class PlayerSprite {
     }
 
     this.sprite.setAlpha(1);
+    this.sprite.clearTint();
   }
 
-  syncFromState(state: PlayerState): void {
+  syncFromState(state: PlayerState, context?: AnimationResolveContext): void {
     this.sprite.setPosition(
       Math.round(state.position.x),
       Math.round(state.position.y),
@@ -56,18 +75,12 @@ export class PlayerSprite {
       return;
     }
 
-    this.applyMovementVisuals(state);
-  }
+    const animationKey = resolvePlayerAnimation(state, context);
+    const phaserAnimKey = toPhaserAnimKey(animationKey);
 
-  private applyMovementVisuals(state: PlayerState): void {
-    if (!state.isGrounded) {
-      this.sprite.setScale(1, 1.08);
-      this.sprite.setTint(0xc4b5fd);
-      return;
+    if (this.currentAnim !== phaserAnimKey) {
+      this.sprite.play(phaserAnimKey, true);
+      this.currentAnim = phaserAnimKey;
     }
-
-    const isRunning = Math.abs(state.velocity.x) >= RUN_SPEED_THRESHOLD;
-    this.sprite.setScale(1, isRunning ? 0.96 : 1);
-    this.sprite.clearTint();
   }
 }

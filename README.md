@@ -77,6 +77,8 @@ npm run build
 │   └── assets/          # статические игровые ассеты
 │       ├── maps/        # Tiled карты (JSON)
 │       ├── images/      # спрайты, тайлсеты
+│       │   └── player-sheet.png  # spritesheet игрока (см. Player assets)
+│       ├── sprite/      # исходники анимаций (до сборки в sheet)
 │       └── audio/
 │           ├── sfx/     # звуковые эффекты
 │           └── music/   # музыка
@@ -216,6 +218,60 @@ Change `interconnected-world` добавляет две связанные ко�
 Проверка: `npm run dev` → Новая игра → дойти до синей двери справа → `room-b` → дверь слева → обратно в `room-a`. Сохранение в паузе пишет `currentRoomId` в save.
 
 Чтобы вернуться к demo `level-01`, установите `WORLD_PLAYTEST_ENABLED = false` в `src/game/world-graph.ts`.
+
+## Player assets
+
+Игрок использует spritesheet `public/assets/images/player-sheet.png` (ключ текстуры: `player-sheet`).
+
+| Параметр | Значение |
+|----------|----------|
+| Размер кадра | 172×172 px |
+| Кадров в sheet | 18 (idle 8 + run 6 + jump 1 + fall 1 + attack 2) |
+| Display size в игре | 32×48 px (`PlayerSprite`) |
+
+### Диапазоны кадров анимаций
+
+Конфигурация в `src/presentation/animation/playerSheetConfig.ts`:
+
+| Анимация | Phaser key | Кадры | FPS | Повтор |
+|----------|------------|-------|-----|--------|
+| idle | `player-idle` | 0–7 | 8 | loop |
+| run | `player-run` | 8–13 | 10 | loop |
+| jump | `player-jump` | 14 | 1 | once |
+| fall | `player-fall` | 15 | 1 | once |
+| attack | `player-attack` | 16–17 | 12 | once |
+
+Анимации сгенерированы в SpriteCook и собраны в `public/assets/images/player-sheet.png` через `scripts/build-player-sheet.py`.
+
+### SpriteCook (генерация анимаций)
+
+Базовый персонаж и анимации сгенерированы в SpriteCook:
+
+| Роль | asset_id | Локальный файл |
+|------|----------|----------------|
+| Base character | `e885968f-c6b3-4246-8439-194f6863fc9a` | — |
+| Idle (8 кадров) | `295e8bdc-d4bd-4195-8bf7-f2f1746182b8` | `public/assets/sprite/player-idle.png` |
+| Run (10 кадров) | `fed0a14d-3b12-4b38-a1c8-adb13745421d` | `public/assets/sprite/player-run.png` |
+| Jump (8 кадров) | `945ccaa7-4b73-4c64-9a95-e006369d66c0` | `public/assets/sprite/player-jump.png` |
+| Fall | `9868e9a4-fb2e-4015-acc7-9da080e71623` | `public/assets/sprite/player-fall.png` |
+| Attack (8 кадров) | `9345af40-1cba-4a74-8b4a-bfa812e68b53` | `public/assets/sprite/player-attack.png` |
+
+Манифест: `spritecook-assets.json`.
+
+После скачивания новых strips из SpriteCook:
+
+1. Положить PNG в `public/assets/sprite/`.
+2. Пересобрать sheet: `python3 scripts/build-player-sheet.py` (нужен Pillow).
+3. При изменении раскладки кадров обновить `PLAYER_ANIM_FRAME_RANGES` в `playerSheetConfig.ts`.
+
+### Замена spritesheet
+
+1. Обновите `public/assets/sprite/player-idle.png` (8 кадров в горизонтальной полосе).
+2. Скопируйте в `public/assets/images/player-sheet.png` или пересоберите через `python3 scripts/build-player-sheet.py` (требует Pillow).
+3. При изменении размера кадра обновите `PLAYER_SHEET_FRAME_WIDTH` / `PLAYER_SHEET_FRAME_HEIGHT` в `playerSheetConfig.ts`.
+4. Обновите `PLAYER_ANIM_FRAME_RANGES`, если меняется раскладка кадров.
+
+Резолвер анимаций (`resolvePlayerAnimation`) — чистая функция без Phaser; тесты: `src/presentation/animation/resolvePlayerAnimation.test.ts`.
 
 ## Next steps
 
