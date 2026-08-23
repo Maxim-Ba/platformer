@@ -10,11 +10,13 @@ import {
   type AnimationResolveContext,
   resolvePlayerAnimation,
 } from '@presentation/animation/resolvePlayerAnimation';
+import {
+  PLAYER_DISPLAY_HEIGHT,
+  PLAYER_DISPLAY_WIDTH,
+} from '@domain/constants/player';
 
 const DASH_TINT = 0x88ccff;
 const DASH_ALPHA = 0.6;
-const PLAYER_DISPLAY_WIDTH = 32;
-const PLAYER_DISPLAY_HEIGHT = 48;
 
 export class PlayerSprite {
   readonly sprite: Phaser.GameObjects.Sprite;

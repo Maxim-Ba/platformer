@@ -16,14 +16,14 @@ describe('resolveArchetype', () => {
 
     expect(archetype).toEqual(ENEMY_ARCHETYPES.grunt);
     expect(archetype.maxHp).toBe(2);
-    expect(archetype.width).toBe(32);
-    expect(archetype.height).toBe(48);
+    expect(archetype.width).toBe(64);
+    expect(archetype.height).toBe(96);
     expect(archetype.killXp).toBe(25);
   });
 
   it('resolves flyer and caster archetypes', () => {
     expect(resolveArchetype('flyer').maxHp).toBe(1);
-    expect(resolveArchetype('flyer').width).toBe(24);
+    expect(resolveArchetype('flyer').width).toBe(48);
     expect(resolveArchetype('caster').killXp).toBe(40);
     expect(resolveArchetype('caster').attackBehaviorId).toBe('ranged-cast');
   });

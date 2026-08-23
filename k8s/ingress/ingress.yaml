@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platformer-ingress
+  namespace: platformer
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: le
+spec:
+  tls:
+    - hosts:
+        - platformer.balashov-maxim.ru
+      secretName: platformer-balashov-maxim-tls
+  rules:
+    - host: platformer.balashov-maxim.ru
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: platformer-frontend
+                port:
+                  number: 80

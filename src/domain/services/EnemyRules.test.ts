@@ -19,18 +19,18 @@ describe('EnemyRules', () => {
     const enemy = createEnemyFromSpawn(spawn);
     const aabb = rules.getEnemyAabb(enemy, ENEMY_ARCHETYPES.grunt);
 
-    expect(aabb.width).toBe(32);
-    expect(aabb.height).toBe(48);
-    expect(aabb.x).toBe(enemy.position.x - 16);
-    expect(aabb.y).toBe(enemy.position.y - 48);
+    expect(aabb.width).toBe(64);
+    expect(aabb.height).toBe(96);
+    expect(aabb.x).toBe(enemy.position.x - 32);
+    expect(aabb.y).toBe(enemy.position.y - 96);
   });
 
   it('uses smaller flyer hitbox for overlap', () => {
     const enemy = createEnemyFromSpawn({ ...spawn, enemyType: 'flyer' });
     const aabb = rules.getEnemyAabb(enemy, ENEMY_ARCHETYPES.flyer);
 
-    expect(aabb.width).toBe(24);
-    expect(aabb.height).toBe(24);
+    expect(aabb.width).toBe(48);
+    expect(aabb.height).toBe(48);
   });
 
   it('removes enemy on lethal damage', () => {

@@ -6,8 +6,8 @@ export const ENEMY_ARCHETYPES: Record<EnemyTypeId, EnemyArchetype> = {
   grunt: {
     id: 'grunt',
     maxHp: 2,
-    width: 32,
-    height: 48,
+    width: 64,
+    height: 96,
     speed: 60,
     killXp: 25,
     movementBehaviorId: 'ground-patrol',
@@ -18,8 +18,8 @@ export const ENEMY_ARCHETYPES: Record<EnemyTypeId, EnemyArchetype> = {
   flyer: {
     id: 'flyer',
     maxHp: 1,
-    width: 24,
-    height: 24,
+    width: 48,
+    height: 48,
     speed: 80,
     killXp: 30,
     movementBehaviorId: 'fly-hover',
@@ -30,8 +30,8 @@ export const ENEMY_ARCHETYPES: Record<EnemyTypeId, EnemyArchetype> = {
   caster: {
     id: 'caster',
     maxHp: 2,
-    width: 28,
-    height: 40,
+    width: 56,
+    height: 80,
     speed: 60,
     killXp: 40,
     movementBehaviorId: 'ground-patrol',

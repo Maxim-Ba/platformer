@@ -1,0 +1,80 @@
+// Одноразовый bootstrap namespace platformer.
+// Запускать вручную в Jenkins (не привязывать к webhook).
+pipeline {
+  agent any
+
+  environment {
+    NS = 'platformer'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Namespace') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh 'kubectl apply -f k8s/namespace.yaml'
+        }
+      }
+    }
+
+    stage('Secrets') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          withCredentials([
+            usernamePassword(
+              credentialsId: 'dockerhub-credentials',
+              usernameVariable: 'DOCKER_USER',
+              passwordVariable: 'DOCKER_PASS'
+            )
+          ]) {
+            sh '''
+              kubectl create secret docker-registry dockerhub-secret \
+                --namespace=${NS} \
+                --docker-server=https://index.docker.io/v1/ \
+                --docker-username=${DOCKER_USER} \
+                --docker-password=${DOCKER_PASS} \
+                --dry-run=client -o yaml | kubectl apply -f -
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Applications') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh '''
+            kubectl apply -f k8s/services/
+            kubectl apply -f k8s/deployments/platformer-frontend-deploy.yaml
+            kubectl apply -f k8s/ingress/ingress.yaml
+          '''
+        }
+      }
+    }
+
+    stage('Verify') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh '''
+            kubectl get pods -n ${NS}
+            kubectl get ingress -n ${NS}
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Bootstrap complete. Push Docker image via platformer CD pipeline (Jenkinsfile).'
+    }
+    failure {
+      echo 'Bootstrap failed!'
+    }
+  }
+}

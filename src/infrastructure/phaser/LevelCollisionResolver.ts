@@ -1,9 +1,10 @@
+import {
+  PLAYER_COLLISION_HEIGHT,
+  PLAYER_COLLISION_WIDTH,
+} from '@domain/constants/player';
 import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import type Phaser from 'phaser';
-
-const PLAYER_WIDTH = 24;
-const PLAYER_HEIGHT = 48;
 
 export class LevelCollisionResolver {
   resolve(
@@ -44,9 +45,9 @@ export class LevelCollisionResolver {
     centerX: number,
     feetY: number,
   ): boolean {
-    const left = centerX - PLAYER_WIDTH / 2;
-    const right = centerX + PLAYER_WIDTH / 2;
-    const top = feetY - PLAYER_HEIGHT;
+    const left = centerX - PLAYER_COLLISION_WIDTH / 2;
+    const right = centerX + PLAYER_COLLISION_WIDTH / 2;
+    const top = feetY - PLAYER_COLLISION_HEIGHT;
     const bottom = feetY;
 
     const startTileX = layer.worldToTileX(left, true);

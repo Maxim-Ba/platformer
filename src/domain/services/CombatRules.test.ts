@@ -4,6 +4,7 @@ import {
   ATTACK_ACTIVE_MS,
   ATTACK_COOLDOWN_MS,
   ATTACK_HITBOX_HEIGHT,
+  ATTACK_HITBOX_OFFSET_X,
   ATTACK_HITBOX_WIDTH,
 } from '../constants/combat';
 import { AttackState } from '../value-objects/AttackState';
@@ -47,7 +48,7 @@ describe('CombatRules', () => {
     const hitbox = rules.computeHitbox(100, 200, 1);
 
     expect(hitbox).toEqual({
-      x: 112,
+      x: 100 + ATTACK_HITBOX_OFFSET_X,
       y: 200 - ATTACK_HITBOX_HEIGHT,
       width: ATTACK_HITBOX_WIDTH,
       height: ATTACK_HITBOX_HEIGHT,
@@ -57,7 +58,7 @@ describe('CombatRules', () => {
   it('offsets hitbox to the left when facing left', () => {
     const hitbox = rules.computeHitbox(100, 200, -1);
 
-    expect(hitbox.x).toBe(100 - 12 - ATTACK_HITBOX_WIDTH);
+    expect(hitbox.x).toBe(100 - ATTACK_HITBOX_OFFSET_X - ATTACK_HITBOX_WIDTH);
     expect(hitbox.width).toBe(ATTACK_HITBOX_WIDTH);
   });
 

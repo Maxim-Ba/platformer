@@ -1,3 +1,4 @@
+import { PLAYER_COLLISION_HEIGHT, PLAYER_COLLISION_WIDTH } from '../constants/player';
 import { PROJECTILE_HEIGHT, PROJECTILE_WIDTH } from '../constants/projectiles';
 import type { EnemyArchetype } from '../entities/Enemy';
 import type { EnemyState } from '../entities/EnemyState';
@@ -40,8 +41,8 @@ export class ProjectileRules {
     projectile: ProjectileState,
     playerX: number,
     playerFeetY: number,
-    playerWidth = 24,
-    playerHeight = 48,
+    playerWidth = PLAYER_COLLISION_WIDTH,
+    playerHeight = PLAYER_COLLISION_HEIGHT,
   ): boolean {
     const aabb = this.getProjectileAabb(projectile);
     const playerLeft = playerX - playerWidth / 2;
@@ -91,8 +92,8 @@ export class EnemyRules {
     archetype: EnemyArchetype,
     playerX: number,
     playerFeetY: number,
-    playerWidth = 24,
-    playerHeight = 48,
+    playerWidth = PLAYER_COLLISION_WIDTH,
+    playerHeight = PLAYER_COLLISION_HEIGHT,
   ): boolean {
     const enemyAabb = this.getEnemyAabb(enemy, archetype);
     const playerLeft = playerX - playerWidth / 2;
