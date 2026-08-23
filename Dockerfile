@@ -1,10 +1,10 @@
-# Stage 1: build Vite production bundle
+# Stage 1: quality gate + Vite production bundle
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run lint && npm run test && npm run build
 
 # Stage 2: serve static files with nginx
 FROM nginx:1.27-alpine

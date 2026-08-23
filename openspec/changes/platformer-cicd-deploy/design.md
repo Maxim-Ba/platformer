@@ -42,9 +42,11 @@
 
 **Решение:** `traefik.ingress.kubernetes.io/router.entrypoints: web,websecure` и `certresolver: le` для автоматического TLS.
 
-### 5. Тесты в Docker-контейнере на этапе Test
+### 5. Quality gate через `docker build --target`, не bind-mount
 
-**Решение:** `docker run node:20-alpine` с `npm ci && npm run lint && npm run test && npm run build` — не требует Node на Jenkins agent.
+**Решение:** stage `Test` собирает Dockerfile target `build` (`npm ci`, `lint`, `test`, `npm run build`). Файлы уходят в демон через build context API, Node на агенте не нужен.
+
+**Почему не `docker run -v $PWD`:** Jenkins сам работает в контейнере с проброшенным `/var/run/docker.sock`. `-v /var/jenkins_home/workspace/...:/app` резолвится на хосте, а не внутри Jenkins, поэтому контейнер видит пустой каталог и `npm ci` падает с EUSAGE (нет `package-lock.json`).
 
 ## Risks / Trade-offs
 

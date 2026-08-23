@@ -11,10 +11,11 @@ pipeline {
   stages {
     stage('Test') {
       steps {
-        sh '''
-          docker run --rm -v "$PWD:/app" -w /app node:20-alpine \
-            sh -c "npm ci && npm run lint && npm run test && npm run build"
-        '''
+        script {
+          // Jenkins is a container using the host docker.sock. Bind-mounting
+          // $PWD would look up that path on the host (empty), not the workspace.
+          docker.build("${IMAGE}:${GIT_COMMIT}-ci", '--target build .')
+        }
       }
     }
 

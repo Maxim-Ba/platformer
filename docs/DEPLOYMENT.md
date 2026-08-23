@@ -180,8 +180,8 @@ curl -I https://platformer.balashov-maxim.ru
 
 | Stage | Действие |
 |---|---|
-| Test | `npm ci`, `lint`, `test`, `build` в `node:20-alpine` |
-| Build | `docker build` → `3224142123/platformer:$GIT_COMMIT` |
+| Test | `docker build --target build` → `npm ci`, `lint`, `test`, `build` внутри образа (без bind-mount workspace) |
+| Build | `docker build` → `3224142123/platformer:$GIT_COMMIT` (nginx + `dist/`, слои Test переиспользуются из кэша) |
 | Push | push в Docker Hub (`latest` + commit tag) |
 | Deploy | `kubectl set image` + `rollout status` |
 | Verify | `curl -sf https://platformer.balashov-maxim.ru/` |
@@ -304,4 +304,5 @@ platformer/
 | 502 / нет ответа | Pod не Ready | `kubectl describe pod`, `kubectl logs` |
 | Сертификат не выдаётся | DNS не указывает на сервер или порт 80 закрыт | `dig`, проверить firewall |
 | Игра без ассетов | `public/assets` не попали в образ | Проверить `docker build` и содержимое `/usr/share/nginx/html/assets` |
-| Jenkins Test падает | lint/test/build | Запустить локально `npm run lint && npm run test && npm run build` |
+| Jenkins Test падает с `npm ci` EUSAGE / нет `package-lock.json` | `docker run -v $PWD` при Jenkins-in-Docker монтирует пустой путь хоста | Quality gate должен идти через `docker build --target build`, не через bind-mount |
+| Jenkins Test падает на lint/test/build | Ошибка в коде или зависимостях | Запустить локально `npm run lint && npm run test && npm run build` |
