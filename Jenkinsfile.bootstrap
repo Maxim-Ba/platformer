@@ -45,6 +45,81 @@ pipeline {
       }
     }
 
+    // Task 2.4: MinIO after namespace + dockerhub-secret; before frontend/ingress apply.
+    stage('MinIO Secret') {
+      steps {
+        // Args: Jenkins usernamePassword credentials (username → MINIO_ROOT_USER,
+        //       password → MINIO_ROOT_PASSWORD); namespace platformer;
+        //       Secret name platformer-minio.
+        // Returns: live Opaque Secret platformer-minio applied with
+        //       `kubectl create secret ... --dry-run=client -o yaml | kubectl apply -f -`
+        //       (same style as dockerhub-secret). MUST NOT `kubectl apply`
+        //       `k8s/minio/secret.yaml.example`.
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          withCredentials([
+            usernamePassword(
+              credentialsId: 'minio-assets',
+              usernameVariable: 'MINIO_USER',
+              passwordVariable: 'MINIO_PASS'
+            )
+          ]) {
+            sh '''
+              kubectl create secret generic platformer-minio \
+                --namespace=${NS} \
+                --from-literal=MINIO_ROOT_USER=$MINIO_USER \
+                --from-literal=MINIO_ROOT_PASSWORD=$MINIO_PASS \
+                --dry-run=client -o yaml | kubectl apply -f -
+            '''
+          }
+        }
+      }
+    }
+
+    stage('MinIO Manifests') {
+      steps {
+        // Args: kubeconfig; files under k8s/minio/: statefulset.yaml, service.yaml,
+        //       job.yaml, middleware.yaml; namespace platformer.
+        // Returns: those manifests applied (StatefulSet/Service/Job/Middleware).
+        // MUST NOT `kubectl apply` `k8s/minio/secret.yaml.example` (no `kubectl apply -f k8s/minio/`
+        // that would include the example Secret).
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh '''
+            kubectl apply -f k8s/minio/statefulset.yaml
+            kubectl apply -f k8s/minio/service.yaml
+            kubectl apply -f k8s/minio/job.yaml
+            kubectl apply -f k8s/minio/middleware.yaml
+          '''
+        }
+      }
+    }
+
+    stage('MinIO Ready') {
+      steps {
+        // Args: StatefulSet/pod platformer-minio in namespace platformer.
+        // Returns: wait until platformer-minio is Ready (e.g. kubectl rollout status
+        //       statefulset/platformer-minio or wait --for=condition=ready).
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh 'kubectl rollout status statefulset/platformer-minio -n ${NS} --timeout=180s'
+        }
+      }
+    }
+
+    stage('MinIO Init') {
+      steps {
+        // Args: Job platformer-minio-init in namespace platformer (already applied
+        //       from k8s/minio/job.yaml).
+        // Returns: Job deleted and recreated (idempotent re-run), then wait until
+        //       Job complete (kubectl wait --for=condition=complete).
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh '''
+            kubectl delete job platformer-minio-init -n ${NS} --ignore-not-found
+            kubectl apply -f k8s/minio/job.yaml
+            kubectl wait --for=condition=complete job/platformer-minio-init -n ${NS} --timeout=180s
+          '''
+        }
+      }
+    }
+
     stage('Applications') {
       steps {
         withKubeConfig([credentialsId: 'kubeconfig']) {
