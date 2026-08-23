@@ -7,3 +7,4 @@ openspec
 !README.md
 .env
 .env.*
+!.env.production

@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: platformer-minio-init
+  namespace: platformer
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: init
+          image: minio/mc:latest
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: platformer-minio
+                  key: MINIO_ROOT_USER
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: platformer-minio
+                  key: MINIO_ROOT_PASSWORD
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              until mc alias set minio http://platformer-minio:9000 "${MINIO_ROOT_USER}" "${MINIO_ROOT_PASSWORD}"; do
+                sleep 2
+              done
+              until mc ready minio; do
+                sleep 2
+              done
+              mc mb --ignore-existing minio/platformer-assets || true
+              mc anonymous set download minio/platformer-assets || true
+              printf '%s\n' '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::platformer-assets/assets/*"]}]}' | mc anonymous set-json /dev/stdin minio/platformer-assets || true

@@ -1,6 +1,32 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: platformer-minio
+  namespace: platformer
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: le
+    traefik.ingress.kubernetes.io/router.middlewares: platformer-platformer-minio-media@kubernetescrd
+spec:
+  tls:
+    - hosts:
+        - platformer.balashov-maxim.ru
+      secretName: platformer-balashov-maxim-tls
+  rules:
+    - host: platformer.balashov-maxim.ru
+      http:
+        paths:
+          - path: /media
+            pathType: Prefix
+            backend:
+              service:
+                name: platformer-minio
+                port:
+                  number: 9000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: platformer-ingress
   namespace: platformer
   annotations:

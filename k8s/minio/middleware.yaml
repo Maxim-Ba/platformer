@@ -1,0 +1,14 @@
+# Traefik rewrite for same-origin media (task 2.2).
+# Expected mapping: /media/assets/... → path-style S3 /platformer-assets/assets/...
+# Wire this Middleware to the /media Ingress path only (must not apply to `/`).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: platformer-minio-media
+  namespace: platformer
+spec:
+  stripPrefix:
+    prefixes:
+      - /media
+  addPrefix:
+    prefix: /platformer-assets

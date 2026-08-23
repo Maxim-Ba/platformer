@@ -2,3 +2,14 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# Runtime blobs live in MinIO (npm run assets:push / assets:pull). tiled/ stays committable.
+public/assets/**/*.png
+public/assets/**/*.svg
+public/assets/**/*.json
+public/assets/**/*.ogg
+public/assets/**/*.mp3
+public/assets/**/*.wav
+public/assets/**/*.m4a
+public/assets/**/*.flac
+!public/assets/**/.gitkeep
