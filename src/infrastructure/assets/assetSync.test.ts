@@ -174,6 +174,17 @@ describe('parseS3managerBucketListing', () => {
     expect(listing.files).toEqual(['assets/images/player-sheet.png', 'assets/maps/level-01.json']);
     expect(listing.folders).toEqual([]);
   });
+
+  it('normalizes absolute s3manager hrefs and keeps invalid hrefs as raw paths', () => {
+    const html = `
+      <a href="https://minio-adminer.example/Default/api/buckets/platformer-assets/objects/assets/maps/level-01.json?download=1">Download</a>
+      <a href="https://[">broken</a>
+      <a href="/Default/buckets/platformer-assets/assets/maps">folder</a>
+    `;
+    const listing = parseS3managerBucketListing(html, 'platformer-assets', 'Default');
+    expect(listing.files).toEqual(['assets/maps/level-01.json']);
+    expect(listing.folders).toEqual(['assets/maps']);
+  });
 });
 
 describe('pushAssets', () => {

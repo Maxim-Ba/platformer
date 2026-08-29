@@ -212,6 +212,14 @@ function objectKeyFromDownloadPath(pathname: string, bucket: string): string | n
   return decodeURIComponent(rest);
 }
 
+function pathnameFromHref(href: string): string {
+  try {
+    return new URL(href, DEFAULT_S3MANAGER_PUSH.adminUrl).pathname;
+  } catch {
+    return href;
+  }
+}
+
 function folderPrefixFromBucketPath(
   pathname: string,
   instance: string,
@@ -243,12 +251,7 @@ export function parseS3managerBucketListing(
   let match = hrefRe.exec(html);
   while (match) {
     const href = (match[1] ?? '').replaceAll('&amp;', '&').split('?')[0] ?? '';
-    let pathname = href;
-    try {
-      pathname = new URL(href, DEFAULT_S3MANAGER_PUSH.adminUrl).pathname;
-    } catch {
-      pathname = href;
-    }
+    const pathname = pathnameFromHref(href);
     const objectKey = objectKeyFromDownloadPath(pathname, bucket);
     if (objectKey !== null) {
       files.add(objectKey);
