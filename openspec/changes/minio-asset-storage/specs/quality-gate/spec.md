@@ -7,7 +7,7 @@ CI MUST restore `public/assets/` from object storage before running map validati
 #### Scenario: Jenkins pulls assets before validate maps
 
 - **WHEN** the Jenkins Test stage runs on a checkout that does not contain runtime asset blobs
-- **THEN** the pipeline MUST complete `assets:pull` (or equivalent `mc` mirror) successfully before `npm run validate:maps` or tests that open `public/assets/maps/`
+- **THEN** the pipeline MUST complete `assets:pull` (s3manager HTTPS on `minio-adminer.balashov-maxim.ru`) successfully before `npm run validate:maps` or tests that open `public/assets/maps/`
 
 #### Scenario: Missing MinIO objects fail the gate
 

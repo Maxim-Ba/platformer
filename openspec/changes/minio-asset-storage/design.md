@@ -34,7 +34,7 @@ Change `platformer-cicd-deploy` уже закрыл деплой игры. CDN/o
 
 **Решение:** StatefulSet `platformer-minio` (1 реплика), PVC 5Gi, Service ClusterIP порты 9000 (S3 API) и 9001 (console). Образ `minio/minio` с закреплённым `RELEASE.*` тегом. Root-ключи — k8s Secret, создаваемый bootstrap из Jenkins credentials (как `dockerhub-secret`), не из yaml в git.
 
-**Альтернативы:** отдельный namespace `minio` — лишняя изоляция для одного бакета; Bitnami chart — лишняя зависимость Helm на k3s, где остальное — голые манифесты; PVC + `kubectl cp` — нет S3 API для `mc mirror`.
+**Альтернативы:** отдельный namespace `minio` — лишняя изоляция для одного бакета; Bitnami chart — лишняя зависимость Helm на k3s, где остальное — голые манифесты; PVC + `kubectl cp` — нет публичного HTTPS для синка.
 
 ### 2. Один origin: Ingress path `/media/` → бакет
 
@@ -51,7 +51,7 @@ Change `platformer-cicd-deploy` уже закрыл деплой игры. CDN/o
 ```
 developer working tree (public/assets/* на диске, gitignore)
         │
-        ├─ git pre-push hook → npm run assets:push  (mc mirror → MinIO)
+        ├─ git pre-push hook → npm run assets:push  (s3manager HTTPS → MinIO)
         └─ git push → GitHub (только код, tiled/, манифест путей)
                 │
                 ▼
@@ -61,7 +61,7 @@ developer working tree (public/assets/* на диске, gitignore)
         Verify: GET SITE_URL/ и GET SITE_URL/media/assets/maps/level-01.json
 ```
 
-Команды: `npm run assets:push` / `assets:pull` (обёртка над `mc`). Hook в `scripts/git-hooks/pre-push`, установка: `git config core.hooksPath scripts/git-hooks`. Креды локально в `.env.local` (уже в `.gitignore`); в Jenkins — credentials id `minio-assets`.
+Команды: `npm run assets:push` / `assets:pull` (HTTPS s3manager на `minio-adminer.balashov-maxim.ru`, Traefik BasicAuth). Hook в `scripts/git-hooks/pre-push`, установка: `git config core.hooksPath scripts/git-hooks`. Креды локально в `.env.local` (уже в `.gitignore`); в Jenkins — credentials id `s3manager-http`. Secret MinIO root остаётся `minio-assets` только для bootstrap.
 
 **Альтернативы:** держать бинарники в git и пушить из Jenkins — противоречит «не на GitHub»; Git LFS + rudolfs — второй сервис ради той же S3-семантики.
 
@@ -104,7 +104,7 @@ Dockerfile target `build` по-прежнему видит `public/assets` в co
 - **[Push без hook / без `assets:push`]** → GitHub обновлён, бакет старый, игроки видят прежние спрайты. Митигация: hook обязателен в README; Jenkins Verify падает, если манифестный объект 404; опционально сравнить локальный checksum с HEAD.
 - **[Первый clone без MinIO-доступа]** → нет файлов, `validate:maps` и playtest не работают. Митигация: README `assets:pull`; для офлайна достаточно один раз скачанной папки (gitignore).
 - **[Anonymous GetObject]** → любой, кто знает URL, скачает ассеты. Для клиентской игры это норма (они и так в браузере). Не класть в бакет секреты и WAV-исходники.
-- **[PVC на одной ноде k3s]** → потеря диска = потеря бакета. Митигация: периодический `mc mirror` на рабочую машину; 5Gi достаточно для pet-проекта.
+- **[PVC на одной ноде k3s]** → потеря диска = потеря бакета. Митигация: периодический `assets:pull` на рабочую машину; 5Gi достаточно для pet-проекта.
 - **[Traefik rewrite ошибочен]** → 403/404 на `/media`. Митигация: в DEPLOYMENT.md `curl -sfI` канонического объекта; init Job документирует ожидаемый key.
 - **[История git уже содержит PNG]** → GitHub всё ещё хранит старые блобы. Митигация: Non-Goal rewrite; новые коммиты файлы не добавляют.
 - **[Vite копирует `public/` в `dist/`]** → без очистки слой nginx снова greет бинарники. Митигация: явный `rm` в Dockerfile после build.
@@ -112,12 +112,12 @@ Dockerfile target `build` по-прежнему видит `public/assets` в co
 ## Migration Plan
 
 1. Залить манифесты MinIO + Secret из Jenkins credentials; дождаться Running; прогнать init Job.
-2. Пока файлы ещё в git: с рабочей машины (или временно из Jenkins checkout) `mc mirror public/assets minio/platformer-assets/assets`.
+2. Пока файлы ещё в git: с рабочей машины `npm run assets:push` (или UI `minio-adminer`) в префикс `assets/`.
 3. Проверить `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json`.
 4. Включить `VITE_ASSET_BASE_URL=/media/` в production build; выкатить образ; playtest что спрайты/карты идут с `/media/`.
 5. Добавить gitignore, hook, `git rm --cached` для runtime-файлов; оставить `.gitkeep`.
 6. Переключить Jenkins: **pull → Test/Build → Deploy → Verify /media**. Убрать временный publish-from-checkout.
-7. Rollback игры: `kubectl rollout undo` frontend (хелпер URL в бандле). Rollback ассетов: повторный `mc mirror` предыдущей локальной копии; MinIO versioning не обязателен в этом change.
+7. Rollback игры: `kubectl rollout undo` frontend (хелпер URL в бандле). Rollback ассетов: повторный `assets:push` предыдущей локальной копии; MinIO versioning не обязателен в этом change.
 
 ## Open Questions
 

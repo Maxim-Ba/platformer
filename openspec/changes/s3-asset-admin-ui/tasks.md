@@ -20,9 +20,9 @@
 ## 4. Docs and operator path
 
 - [x] 4.1 Document DNS A/CNAME `minio-adminer.balashov-maxim.ru` in `docs/DEPLOYMENT.md`
-- [x] 4.2 Update `docs/MINIO-ASSETS.md` and README: browser UI and `assets:push` (s3manager HTTPS + BasicAuth from `.env.local` or TTY) as the laptop upload path; prefix `assets/` = `public/assets/`; `git push --no-verify` only when there is no TTY and no env; `assets:pull` stays `mc`
+- [x] 4.2 Update `docs/MINIO-ASSETS.md` and README: browser UI and `assets:push` / `assets:pull` (s3manager HTTPS + BasicAuth from `.env.local` or TTY) as the laptop path; prefix `assets/` = `public/assets/`; `git push --no-verify` only when there is no TTY and no env
 - [x] 4.3 Document BasicAuth vs MinIO root keys (HTTP login ≠ S3 user unless the operator chooses the same password)
-- [x] 4.4 Change `assets:push` / pre-push to POST runtime files to s3manager HTTPS with Traefik BasicAuth (not laptop `mc` to `:9000`)
+- [x] 4.4 Change `assets:push` / `assets:pull` / pre-push to talk to s3manager HTTPS with Traefik BasicAuth (not laptop MinIO `:9000`)
 
 ## 5. Verify
 

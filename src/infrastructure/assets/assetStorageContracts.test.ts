@@ -64,14 +64,12 @@ describe('pre-push hook (task 3.3)', () => {
 });
 
 describe('.env.example (task 3.4)', () => {
-  it('documents s3manager BasicAuth and MinIO pull env vars without real secrets', () => {
+  it('documents s3manager BasicAuth env vars without real secrets', () => {
     const envExample = readRepoFile('.env.example');
     expect(envExample).toMatch(/^S3MANAGER_URL=https:\/\/minio-adminer\.balashov-maxim\.ru\s*$/m);
     expect(envExample).toMatch(/^S3MANAGER_USER=\s*$/m);
     expect(envExample).toMatch(/^S3MANAGER_PASSWORD=\s*$/m);
-    expect(envExample).toMatch(/^MINIO_ENDPOINT=\s*$/m);
-    expect(envExample).toMatch(/^MINIO_ACCESS_KEY=\s*$/m);
-    expect(envExample).toMatch(/^MINIO_SECRET_KEY=\s*$/m);
+    expect(envExample).not.toMatch(/MINIO_ENDPOINT/);
     expect(envExample).not.toMatch(/MINIO_(ACCESS_KEY|SECRET_KEY|PASS)=.{8,}/);
     expect(envExample).not.toMatch(/^S3MANAGER_PASSWORD=.+$/m);
     expect(envExample.toLowerCase()).not.toMatch(/minioadmin/);

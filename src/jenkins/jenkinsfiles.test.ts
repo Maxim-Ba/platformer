@@ -407,16 +407,20 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
       const body = extractStageBody(jenkinsExec, STAGE_PULL_ASSETS);
       const shell = stageShell(jenkinsExec, STAGE_PULL_ASSETS);
 
-      it('uses withCredentials usernamePassword id minio-assets and npm run assets:pull into public/assets/', () => {
+      it('uses withCredentials s3manager-http and docker npm run assets:pull into public/assets/', () => {
         expect(hasUnimplementedError(body), `${STAGE_PULL_ASSETS} must not stay unimplemented`).toBe(
           false,
         );
         expect(body).toMatch(/withCredentials/);
         expect(body).toMatch(/usernamePassword/);
-        expect(body).toMatch(/credentialsId:\s*['"]minio-assets['"]/);
+        expect(body).toMatch(/credentialsId:\s*['"]s3manager-http['"]/);
         expect(body).toMatch(/\bsh\b/);
+        expect(shell).toMatch(/docker/);
         expect(shell).toMatch(/npm\s+run\s+assets:pull/);
+        expect(shell).toMatch(/minio-adminer\.balashov-maxim\.ru|S3MANAGER_URL/);
         expect(shell).toMatch(/public\/assets\//);
+        expect(shell).not.toMatch(/\bmc\s+mirror\b/);
+        expect(shell).not.toMatch(/^\s*npm\s+run\s+assets:pull\s*$/m);
       });
     });
 

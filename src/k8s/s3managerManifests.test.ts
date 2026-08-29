@@ -679,13 +679,13 @@ describe('3.2 Jenkinsfile.bootstrap stage s3manager after MinIO Init', () => {
 });
 
 describe('3.3 game Jenkinsfile does not build or push s3manager', () => {
-  it('keeps the game image pipeline free of s3manager build/push', () => {
+  it('keeps the game image pipeline free of s3manager image build/push', () => {
     const jenkinsExec = stripGroovyComments(readRepoFile('Jenkinsfile'));
 
     expect(jenkinsExec).not.toMatch(/cloudlena\/s3manager/);
-    expect(jenkinsExec).not.toMatch(/s3manager/i);
     expect(jenkinsExec).not.toMatch(new RegExp(escapeRegex(S3MANAGER_DEPLOYMENT_FILE)));
-    expect(jenkinsExec).not.toMatch(new RegExp(escapeRegex(S3MANAGER_INGRESS_HOST)));
+    expect(jenkinsExec).not.toMatch(/docker\.build\([\s\S]*s3manager/i);
+    expect(jenkinsExec).not.toMatch(/kubectl\s+apply[\s\S]*s3manager/i);
   });
 });
 

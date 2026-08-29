@@ -44,12 +44,12 @@ The repository MUST provide documented commands that upload the working tree `pu
 
 #### Scenario: Push mirrors local assets to MinIO
 
-- **WHEN** a developer with MinIO credentials runs `npm run assets:push` and `public/assets/` contains runtime files
+- **WHEN** a developer with s3manager BasicAuth runs `npm run assets:push` and `public/assets/` contains runtime files
 - **THEN** those files MUST appear in bucket `platformer-assets` under the `assets/` prefix with the same relative paths
 
 #### Scenario: Pull restores assets for local development
 
-- **WHEN** a developer with MinIO credentials runs `npm run assets:pull` on a clone that has an empty `public/assets/` tree
+- **WHEN** a developer with s3manager BasicAuth runs `npm run assets:pull` on a clone that has an empty `public/assets/` tree
 - **THEN** runtime files MUST be written under `public/assets/` so `npm run dev` and `npm run validate:maps` can use them
 
 ### Requirement: Git push publishes assets and excludes them from GitHub
@@ -59,7 +59,7 @@ Runtime files under `public/assets/` MUST be published to MinIO as part of pushi
 #### Scenario: Pre-push hook uploads before GitHub receives the commit
 
 - **WHEN** a developer runs `git push` with `core.hooksPath` pointing at the repository git hooks
-- **THEN** the pre-push hook MUST run `assets:push` (or equivalent `mc` mirror) before the push is sent to the remote
+- **THEN** the pre-push hook MUST run `assets:push` before the push is sent to the remote
 
 #### Scenario: Runtime binaries are gitignored
 

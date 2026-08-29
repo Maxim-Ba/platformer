@@ -2,7 +2,7 @@
 
 ### Requirement: Operator may publish assets via the web UI
 
-Publishing runtime objects to bucket `platformer-assets` MUST be possible through the authenticated s3manager UI. The git pre-push hook MUST publish via the same admin HTTPS host (not laptop `mc` to MinIO `:9000`) and MUST NOT be the only supported upload path.
+Publishing runtime objects to bucket `platformer-assets` MUST be possible through the authenticated s3manager UI. The git pre-push hook MUST publish via the same admin HTTPS host (not laptop MinIO `:9000`) and MUST NOT be the only supported upload path.
 
 #### Scenario: Browser upload replaces laptop tunnel
 
@@ -13,6 +13,11 @@ Publishing runtime objects to bucket `platformer-assets` MUST be possible throug
 
 - **WHEN** a developer runs `npm run assets:push` with `S3MANAGER_USER` / `S3MANAGER_PASSWORD` (env or TTY prompt) and `public/assets/` contains runtime files
 - **THEN** the files MUST be POSTed to s3manager as object keys `assets/<relative-path>` in bucket `platformer-assets`
+
+#### Scenario: CLI pull uses s3manager HTTPS BasicAuth
+
+- **WHEN** a developer or Jenkins runs `npm run assets:pull` with `S3MANAGER_USER` / `S3MANAGER_PASSWORD` against `https://minio-adminer.balashov-maxim.ru`
+- **THEN** objects under prefix `assets/` MUST be written under `public/assets/` with the same relative paths
 
 #### Scenario: Git push without credentials in a GUI
 

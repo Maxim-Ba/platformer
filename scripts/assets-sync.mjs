@@ -3,9 +3,9 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-// Operator seed from the laptop: npm run assets:push POSTs public/assets
-//   to s3manager (https://minio-adminer.balashov-maxim.ru) as platformer-assets/assets.
-// Jenkins assets:pull still uses mc against the in-cluster S3 API.
+// Laptop + Jenkins: assets:push / assets:pull talk to s3manager
+//   https://minio-adminer.balashov-maxim.ru (Traefik BasicAuth).
+// Mapping: public/assets ↔ platformer-assets/assets
 // Operator 7.5 local verify: npm run assets:pull && npm run validate:maps && npm test && npm run build
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const entry = path.join(root, 'src/infrastructure/assets/runAssetSyncCli.ts');

@@ -32,7 +32,7 @@ Git hook (`pre-push` runs `assets:push` → s3manager HTTPS):
 git config core.hooksPath scripts/git-hooks
 ```
 
-Credentials: `S3MANAGER_USER` / `S3MANAGER_PASSWORD` in `.env.local` (same as UI BasicAuth). If they are missing, a terminal prompt asks. Git GUI without TTY: fill `.env.local` or `git push --no-verify`.
+Credentials: `S3MANAGER_USER` / `S3MANAGER_PASSWORD` in `.env.local` (same as UI BasicAuth) for **both** `assets:push` and `assets:pull`. If they are missing, a terminal prompt asks. Git GUI without TTY: fill `.env.local` or `git push --no-verify`.
 
 Одноразовые шаги оператора (не из CI):
 

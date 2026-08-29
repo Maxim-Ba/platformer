@@ -201,11 +201,13 @@ curl -I https://platformer.balashov-maxim.ru
 
 | Stage | Действие |
 |---|---|
+| Pull Assets | `npm run assets:pull` в контейнере `node:20-alpine` против `https://minio-adminer.balashov-maxim.ru` (credential `s3manager-http`; агент без Node) |
+| Assert World Graph Maps | `test -f` карт `room-a/b/c` после pull |
 | Test | `docker build --target build` → `npm ci`, `lint`, `test`, `build` внутри образа (без bind-mount workspace) |
 | Build | `docker build` → `3224142123/platformer:$GIT_COMMIT` (nginx + `dist/`, слои Test переиспользуются из кэша) |
 | Push | push в Docker Hub (`latest` + commit tag) |
 | Deploy | `kubectl set image` + `rollout status` |
-| Verify | `curl -sf https://platformer.balashov-maxim.ru/` |
+| Verify | `curl -sf` `/` и `curl -sfI` `/media/assets/maps/level-01.json` |
 
 ### 6.4 Jenkins jobs в репозитории
 
@@ -325,6 +327,7 @@ platformer/
 | 502 / нет ответа | Pod не Ready | `kubectl describe pod`, `kubectl logs` |
 | Сертификат не выдаётся | DNS не указывает на сервер или порт 80 закрыт | `dig`, проверить firewall |
 | Игра без ассетов | нет объектов в MinIO / нет `/media/` | UI или `npm run assets:push` на `minio-adminer`, затем `curl -sfI` `/media/assets/maps/level-01.json` |
+| Jenkins Pull Assets падает с `npm: not found` (exit 127) | агент Jenkins — контейнер без Node | Не вызывать `npm` на агенте: `docker create` + `npm run assets:pull` в `node:20-alpine` к minio-adminer |
 | Jenkins Test падает с `npm ci` EUSAGE / нет `package-lock.json` | `docker run -v $PWD` при Jenkins-in-Docker монтирует пустой путь хоста | Quality gate должен идти через `docker build --target build`, не через bind-mount |
 | Jenkins Test падает на lint/test/build | Ошибка в коде или зависимостях | Запустить локально `npm run lint && npm run test && npm run build` |
 
@@ -344,8 +347,7 @@ platformer/
 ### Credentials
 
 - Кластер: Jenkins `credentialsId: minio-assets` → Secret `platformer-minio` (`MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`).
-- Локальный **push**: `S3MANAGER_URL` / `S3MANAGER_USER` / `S3MANAGER_PASSWORD` в `.env.example` (пароль пустой). Скопируйте в `.env.local`, не коммитьте. Это HTTP BasicAuth админки, не MinIO root.
-- Локальный / Jenkins **pull**: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` (Jenkins подставляет `MINIO_USER` / `MINIO_PASS`).
+- Локальный и Jenkins **push/pull**: `S3MANAGER_URL` / `S3MANAGER_USER` / `S3MANAGER_PASSWORD` (id Jenkins `s3manager-http`). Не MinIO S3 API и не клиент `mc`.
 
 ### Verify curls
 
@@ -365,7 +367,7 @@ npm run assets:push
 
 Браузер: https://minio-adminer.balashov-maxim.ru/ → бакет `platformer-assets` → префикс `assets/` (= `public/assets/`).
 
-`npm run assets:pull` по-прежнему зеркалит бакет → `public/assets` через `mc` (Jenkins и локальный clone).
+`npm run assets:pull` качает префикс `assets/` → `public/assets` через HTTPS s3manager (`minio-adminer.balashov-maxim.ru`). Jenkins делает то же в контейнере Node (агент без npm).
 
 ### Untrack blobs after `/media/` playtest
 
@@ -421,7 +423,7 @@ HTTP login on `minio-adminer.balashov-maxim.ru` is Traefik BasicAuth. It is **no
 
 `npm run assets:push` POSTs files from `public/assets/` to `https://minio-adminer.balashov-maxim.ru/Default/api/buckets/platformer-assets/objects` with BasicAuth (same login as the UI). Object key is `assets/<relative-path>`. Env: `S3MANAGER_URL`, `S3MANAGER_USER`, `S3MANAGER_PASSWORD` in `.env.local`. If user/pass are missing and stdin is a TTY, the CLI prompts. Git GUI / Cursor without TTY: put creds in `.env.local` or `git push --no-verify`.
 
-`npm run assets:pull` still uses `mc` against the MinIO S3 API (Jenkins).
+`npm run assets:pull` uses the same s3manager HTTPS host as `assets:push` (`minio-adminer.balashov-maxim.ru`, Traefik BasicAuth). Jenkins CD runs that command in `node:20-alpine` because the agent has no Node.
 
 ### Verify (after DNS + bootstrap)
 

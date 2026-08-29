@@ -6,7 +6,7 @@
 
 ## Заливка с ноутбука
 
-Не нужен `kubectl port-forward` и не нужен клиент `mc` на ПК.
+Не нужен `kubectl port-forward` и не нужен клиент MinIO (`mc`) на ПК.
 
 1. Браузер: https://minio-adminer.balashov-maxim.ru/ (Traefik BasicAuth / HTTP login).
 2. Бакет `platformer-assets`, префикс `assets/` с тем же относительным путём, что `public/assets/` (ключ `platformer-assets/assets/<relative-path>`).
@@ -28,7 +28,7 @@ git push
 
 ## Скачивание (clone / Jenkins)
 
-`npm run assets:pull` зеркалит бакет → `public/assets/` через `mc` и S3 API (`MINIO_ENDPOINT` / ключи). Jenkins credentials id `minio-assets` (`MINIO_USER` / `MINIO_PASS`).
+`npm run assets:pull` качает префикс `assets/` → `public/assets/` через HTTPS s3manager (`https://minio-adminer.balashov-maxim.ru`, те же `S3MANAGER_USER` / `S3MANAGER_PASSWORD`, что и UI). Jenkins credentials id `s3manager-http`; агент без Node, поэтому CD запускает тот же `npm run assets:pull` внутри `node:20-alpine`.
 
 ```bash
 git clone <repo>

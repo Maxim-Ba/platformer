@@ -14,10 +14,10 @@
 
 ## 3. Local sync and git exclusion
 
-- [x] 3.1 Add npm scripts `assets:push` and `assets:pull` wrapping `mc mirror` between `public/assets/` and `platformer-assets/assets`
+- [x] 3.1 Add npm scripts `assets:push` and `assets:pull` syncing `public/assets/` ↔ `platformer-assets/assets` via s3manager HTTPS
 - [x] 3.2 Gitignore runtime blobs under `public/assets/` (png, svg, json maps, audio); keep `.gitkeep` in maps/images/sprite/tilesets (and audio if present)
 - [x] 3.3 Add `scripts/git-hooks/pre-push` that runs `assets:push`; document `git config core.hooksPath scripts/git-hooks`
-- [x] 3.4 Document local MinIO env vars in `.env.example` (endpoint, access key, secret) without real secrets
+- [x] 3.4 Document s3manager BasicAuth env vars in `.env.example` without real secrets
 
 ## 4. Phaser loads from configurable base URL
 
@@ -34,7 +34,7 @@
 
 ## 6. Jenkins pipeline
 
-- [x] 6.1 Add Jenkins credentials id `minio-assets` usage in `Jenkinsfile`: `assets:pull` into `public/assets/` before Test/Docker build
+- [x] 6.1 Add Jenkins credentials id `s3manager-http` usage in `Jenkinsfile`: `assets:pull` into `public/assets/` before Test/Docker build
 - [x] 6.2 Fail the pipeline if pull cannot restore a map required by `WORLD_GRAPH`
 - [x] 6.3 Extend Verify to `curl -sfI` `SITE_URL/media/assets/maps/level-01.json` (HTTP 200) in addition to `SITE_URL/`
 - [x] 6.4 Keep image push/deploy gated on lint, test, and build after a successful pull
@@ -43,7 +43,7 @@
 
 - [x] 7.1 Update `docs/DEPLOYMENT.md`: architecture diagram with MinIO, bootstrap Secret/Job, credentials, verify curls for `/` and `/media/...`
 - [x] 7.2 Update README: clone → `assets:pull` → `npm run dev`; hook setup; that runtime files are not in git
-- [x] 7.3 One-time seed: `mc mirror` current `public/assets` into the bucket while files are still in git
+- [x] 7.3 One-time seed: UI or `npm run assets:push` current `public/assets` into the bucket while files are still in git
 - [x] 7.4 After prod playtest from `/media/`, `git rm --cached` runtime blobs, commit gitignore + `.gitkeep` (do not rewrite history)
 - [x] 7.5 Verify locally: `assets:pull`, `npm run validate:maps`, `npm test`, `npm run build`
 - [x] 7.6 Verify cluster: MinIO Ready, `curl -sfI` map JSON on `/media/`, game loads sprites/maps from MinIO in the browser

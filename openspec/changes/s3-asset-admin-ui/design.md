@@ -1,6 +1,6 @@
 ## Context
 
-Change `minio-asset-storage` уже кладёт MinIO в namespace `platformer` (StatefulSet `platformer-minio`, бакет `platformer-assets`, S3 `:9000` ClusterIP). Публичное чтение — `https://platformer.balashov-maxim.ru/media/...`. Запись с ноутбука задумана как `npm run assets:push` / `mc mirror` через port-forward. На ПК нет рабочего kubeconfig: туннель ломается, `/usr/bin/mc` — Midnight Commander. MinIO Console `:9001` намеренно без Ingress.
+Change `minio-asset-storage` уже кладёт MinIO в namespace `platformer` (StatefulSet `platformer-minio`, бакет `platformer-assets`, S3 `:9000` ClusterIP). Публичное чтение — `https://platformer.balashov-maxim.ru/media/...`. Запись с ноутбука через port-forward не работает: нет kubeconfig. MinIO Console `:9001` намеренно без Ingress.
 
 Нужен браузерный upload, который **проксирует S3 из пода**, а не с ноутбука. Хост: `minio-adminer.balashov-maxim.ru`. Манифесты остаются в репозитории игры.
 
@@ -13,7 +13,7 @@ Change `minio-asset-storage` уже кладёт MinIO в namespace `platformer`
 - Console `:9001` и анонимный Put на `/media` не открывать
 - Bootstrap применяет UI после MinIO Ready
 - Документация: DNS, логин, префикс `assets/` как зеркало `public/assets/`
-- `assets:push` / pre-push заливают через HTTPS s3manager + BasicAuth; `assets:pull` остаётся `mc`
+- `assets:push` / `assets:pull` / pre-push ходят через HTTPS s3manager + BasicAuth
 
 **Non-Goals:**
 
@@ -52,13 +52,13 @@ S3-ключи пода — существующий `platformer-minio`. Для p
 
 ### 5. CLI и hook
 
-**Решение:** `npm run assets:push` и `scripts/git-hooks/pre-push` остаются, но **не** вызывают `mc` с ноутбука. Push POSTs multipart `file`+`path` на `{S3MANAGER_URL}/Default/api/buckets/platformer-assets/objects` с Traefik BasicAuth (`S3MANAGER_USER` / `S3MANAGER_PASSWORD` из `.env.local`, иначе prompt на TTY). Браузерный UI — тот же хост. Jenkins по-прежнему `assets:pull` через `mc` из кластера. `git push --no-verify` — только если нет TTY и нет `.env.local` (Git GUI).
+**Решение:** `npm run assets:push`, `npm run assets:pull` и `scripts/git-hooks/pre-push` ходят на `{S3MANAGER_URL}` (`https://minio-adminer.balashov-maxim.ru`). Push POSTs multipart `file`+`path` на `/Default/api/buckets/platformer-assets/objects`; pull листит bucket HTML и GET `/Default/api/buckets/{bucket}/objects/{key}`. Traefik BasicAuth (`S3MANAGER_USER` / `S3MANAGER_PASSWORD` из `.env.local`, иначе prompt на TTY). Браузерный UI — тот же хост. Jenkins CD запускает `assets:pull` в `node:20-alpine` с credential `s3manager-http`. `git push --no-verify` — только если нет TTY и нет `.env.local` (Git GUI).
 
 ## Risks / Trade-offs
 
 - **[UI в интернете с root MinIO]** → полный доступ к бакету при утечке BasicAuth. Митигация: сильный HTTP-пароль, не коммитить Secret, позже — отдельный MinIO-user.
 - **[BasicAuth без TLS пока нет сертификата]** → пароль по HTTP. Митигация: тот же `certresolver: le`, не открывать UI до DNS.
-- **[s3manager ходит path-style иначе, чем mc]** → пустые бакеты / 404. Митигация: явный endpoint `platformer-minio:9000` и проверка upload → `curl` `/media/assets/...` после починки media-роута.
+- **[s3manager ходит path-style иначе, чем in-cluster S3]** → пустые бакеты / 404. Митигация: явный endpoint `platformer-minio:9000` и проверка upload → `curl` `/media/assets/...` после починки media-роута.
 - **[Образ без пина]** → сюрприз на bootstrap. Митигация: тег RELEASE/semver в манифесте.
 - **[DNS забыли]** → LE не выпустит cert. Митигация: шаг в DEPLOYMENT.md до Build Now.
 - **[Hook без TTY и без .env.local]** → Git GUI блокирует push. Митигация: `.env.local` или `git push --no-verify`; не считать регрессией UI.

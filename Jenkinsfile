@@ -6,6 +6,7 @@ pipeline {
     DEPLOY = 'platformer-frontend'
     NS = 'platformer'
     SITE_URL = 'https://platformer.balashov-maxim.ru'
+    S3MANAGER_URL = 'https://minio-adminer.balashov-maxim.ru'
   }
 
   stages {
@@ -13,20 +14,35 @@ pipeline {
     // Build → Push → Deploy. Push/Deploy MUST stay after Test/Build; not parallel with Test.
     stage('Pull Assets') {
       steps {
-        // Args: Jenkins credentials id `minio-assets` (usernamePassword);
-        //       `npm run assets:pull`; destination `public/assets/`.
-        // Returns: runtime blobs restored into public/assets/ on the agent BEFORE
-        //       Test `docker.build(..., '--target build .')` so maps/images are in
-        //       the Docker build context. Do not implement withCredentials/sh here yet.
+        // Jenkins-in-Docker has docker but no Node (`npm: not found`).
+        // docker.inside bind-mounts $PWD from the *host*. Copy the workspace
+        // into a node container and run `npm run assets:pull` against
+        // minio-adminer HTTPS (same s3manager host as the UI / assets:push).
         withCredentials([
           usernamePassword(
-            credentialsId: 'minio-assets',
-            usernameVariable: 'MINIO_USER',
-            passwordVariable: 'MINIO_PASS'
+            credentialsId: 's3manager-http',
+            usernameVariable: 'S3MANAGER_USER',
+            passwordVariable: 'S3MANAGER_PASSWORD'
           )
         ]) {
-          sh 'npm run assets:pull'
-          sh 'test -d public/assets/'
+          sh '''
+            set -eu
+            cid=$(docker create \
+              -e S3MANAGER_URL \
+              -e S3MANAGER_USER \
+              -e S3MANAGER_PASSWORD \
+              -e S3MANAGER_INSTANCE=Default \
+              node:20-alpine sleep 3600)
+            cleanup() { docker rm -f "$cid" >/dev/null 2>&1 || true; }
+            trap cleanup EXIT
+            docker start "$cid"
+            docker exec "$cid" mkdir -p /app
+            docker cp "$PWD/." "$cid":/app
+            docker exec -w /app "$cid" sh -c "npm ci && npm run assets:pull"
+            mkdir -p public/assets
+            docker cp "$cid":/app/public/assets/. public/assets/
+            test -d public/assets/
+          '''
         }
       }
     }
