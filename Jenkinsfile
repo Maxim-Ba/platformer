@@ -9,6 +9,42 @@ pipeline {
   }
 
   stages {
+    // Task 6.4: Pull (agent workspace) → Test (docker --target build: lint/test/build) →
+    // Build → Push → Deploy. Push/Deploy MUST stay after Test/Build; not parallel with Test.
+    stage('Pull Assets') {
+      steps {
+        // Args: Jenkins credentials id `minio-assets` (usernamePassword);
+        //       `npm run assets:pull`; destination `public/assets/`.
+        // Returns: runtime blobs restored into public/assets/ on the agent BEFORE
+        //       Test `docker.build(..., '--target build .')` so maps/images are in
+        //       the Docker build context. Do not implement withCredentials/sh here yet.
+        withCredentials([
+          usernamePassword(
+            credentialsId: 'minio-assets',
+            usernameVariable: 'MINIO_USER',
+            passwordVariable: 'MINIO_PASS'
+          )
+        ]) {
+          sh 'npm run assets:pull'
+          sh 'test -d public/assets/'
+        }
+      }
+    }
+
+    stage('Assert World Graph Maps') {
+      steps {
+        // Args: WORLD_GRAPH room ids from src/game/world-graph.ts (room-a, room-b,
+        //       room-c) — shell/node check after pull; do not import TypeScript from Jenkins.
+        // Returns: success only if `public/assets/maps/{id}.json` exists for each id;
+        //       otherwise fail the pipeline (MUST NOT reach Push/Deploy).
+        sh '''
+          test -f public/assets/maps/room-a.json
+          test -f public/assets/maps/room-b.json
+          test -f public/assets/maps/room-c.json
+        '''
+      }
+    }
+
     stage('Test') {
       steps {
         script {
@@ -54,6 +90,11 @@ pipeline {
     stage('Verify') {
       steps {
         sh 'curl -sf ${SITE_URL}/ -o /dev/null'
+        // CONTRACT STEP VerifyMinIOMedia (task 6.3)
+        // Args: SITE_URL (https://platformer.balashov-maxim.ru)
+        // Returns: HTTP 200 from `curl -sfI ${SITE_URL}/media/assets/maps/level-01.json`
+        //       in addition to the homepage GET above. Non-200 fails the pipeline.
+        sh 'curl -sfI ${SITE_URL}/media/assets/maps/level-01.json -o /dev/null'
       }
     }
   }

@@ -13,6 +13,36 @@ Pet-проект 2D-платформера в духе тёмного фэнте
 npm install
 ```
 
+## Runtime assets (MinIO)
+
+Runtime-файлы (png, svg, json-карты, аудио) **не в git**: каталоги под `public/assets/` в gitignore, остаются только `.gitkeep`. Источник правды — MinIO. `tiled/` остаётся в репозитории.
+
+Clone → pull → dev:
+
+```bash
+git clone <repo>
+npm install
+npm run assets:pull
+npm run dev
+```
+
+Git hook (`pre-push` runs `assets:push` → s3manager HTTPS):
+
+```bash
+git config core.hooksPath scripts/git-hooks
+```
+
+Credentials: `S3MANAGER_USER` / `S3MANAGER_PASSWORD` in `.env.local` (same as UI BasicAuth). If they are missing, a terminal prompt asks. Git GUI without TTY: fill `.env.local` or `git push --no-verify`.
+
+Одноразовые шаги оператора (не из CI):
+
+- Seed: browser UI or `npm run assets:push` into prefix `assets/` (= `public/assets/`).
+- Untrack (7.4): after prod playtest from `/media/`, `git rm --cached` runtime blobs, commit gitignore + `.gitkeep` (do not rewrite history).
+- Local verify (7.5): `npm run assets:pull`, `npm run validate:maps`, `npm test`, `npm run build`.
+- Cluster verify (7.6): MinIO Ready; `curl -sfI` map JSON on `/media/`; game loads sprites/maps from MinIO in the browser.
+
+Browser UI: `https://minio-adminer.balashov-maxim.ru/` (BasicAuth / HTTP login). HTTP login ≠ MinIO root unless the operator reuses the password.
+
 ## Development
 
 Запуск dev-сервера с hot reload:

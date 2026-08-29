@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "validate:maps": "node scripts/validate-maps.mjs"
+    "validate:maps": "node scripts/validate-maps.mjs",
+    "assets:push": "node scripts/assets-sync.mjs push",
+    "assets:pull": "node scripts/assets-sync.mjs pull"
   },
   "dependencies": {
     "phaser": "^3.90.0",

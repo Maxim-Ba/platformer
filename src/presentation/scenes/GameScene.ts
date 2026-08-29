@@ -11,7 +11,8 @@ import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
 import type { InputActionId } from '@domain/types/InputActionId';
-import { AssetKeys, BEAST_SOLDIER_TILESET_PATH } from '@game/asset-keys';
+import { AssetKeys, BEAST_SOLDIER_TILESET_PATH, LEVEL_TILESET_PATH } from '@game/asset-keys';
+import { assetUrl } from '@game/assetUrl';
 import {
   CHARACTER_MENU_TABS,
   getTabByIndex,
@@ -118,10 +119,10 @@ export class GameScene extends Phaser.Scene {
   preload(): void {
     this.load.tilemapTiledJSON(
       mapCacheKey(this.currentRoomId),
-      `assets/maps/${this.currentRoomId}.json`,
+      assetUrl(`assets/maps/${this.currentRoomId}.json`),
     );
-    this.load.image(AssetKeys.Tileset, 'assets/tilesets/platformer-tiles.png');
-    this.load.image(AssetKeys.BeastSoldierTileset, BEAST_SOLDIER_TILESET_PATH);
+    this.load.image(AssetKeys.Tileset, assetUrl(LEVEL_TILESET_PATH));
+    this.load.image(AssetKeys.BeastSoldierTileset, assetUrl(BEAST_SOLDIER_TILESET_PATH));
   }
 
   create(): void {
@@ -1035,7 +1036,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     return new Promise((resolve, reject) => {
-      this.load.tilemapTiledJSON(cacheKey, `assets/maps/${roomId}.json`);
+      this.load.tilemapTiledJSON(cacheKey, assetUrl(`assets/maps/${roomId}.json`));
       this.load.once(Phaser.Loader.Events.COMPLETE, () => {
         resolve();
       });

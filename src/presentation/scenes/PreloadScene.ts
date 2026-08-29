@@ -1,4 +1,5 @@
 import { FOUNDATION_ASSETS } from '@game/asset-keys';
+import { assetUrl } from '@game/assetUrl';
 import { SceneKeys } from '@game/scene-keys';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import {
@@ -23,15 +24,16 @@ export class PreloadScene extends Phaser.Scene {
     this.createProgressUI();
 
     for (const asset of FOUNDATION_ASSETS) {
+      const url = assetUrl(asset.path);
       if (asset.type === 'svg') {
-        this.load.svg(asset.key, asset.path);
+        this.load.svg(asset.key, url);
       } else if (asset.type === 'spritesheet') {
-        this.load.spritesheet(asset.key, asset.path, {
+        this.load.spritesheet(asset.key, url, {
           frameWidth: asset.frameWidth,
           frameHeight: asset.frameHeight,
         });
       } else {
-        this.load.image(asset.key, asset.path);
+        this.load.image(asset.key, url);
       }
     }
 

@@ -12,6 +12,8 @@
 6. [Jenkins CI/CD](#6-jenkins-cicd)
 7. [Проверка работы](#7-проверка-работы)
 8. [Полезные команды](#8-полезные-команды)
+9. [MinIO](#9-minio)
+10. [s3manager admin UI](#10-s3manager-admin-ui)
 
 ---
 
@@ -19,13 +21,13 @@
 
 ```
 Разработчик
-    │ git push
+    │ git push (+ pre-push: assets:push → s3manager HTTPS)
     ▼
 GitHub (platformer)
     │ webhook
     ▼
 Jenkins (на сервере) ──► Docker Hub
-    │   lint + test + build      (3224142123/platformer)
+    │   assets:pull + lint + test + build   (3224142123/platformer)
     │ kubectl set image               │
     ▼                                 │
 k3s Cluster (тот же, что у CV)       │
@@ -33,15 +35,25 @@ k3s Cluster (тот же, что у CV)       │
 │  Namespace: platformer                           │
 │                                                  │
 │  Traefik Ingress                                 │
-│    platformer.balashov-maxim.ru ──► nginx:80     │
+│    /      → platformer-frontend nginx:80         │
+│    /media → MinIO :9000 (bucket platformer-assets│
+│             prefix assets/; rewrite /media →     │
+│             /platformer-assets)                  │
 │                                                  │
-│  Pod: platformer-frontend (nginx + static dist)  │
+│  Pod: platformer-frontend (nginx + hashed dist)  │
+│  StatefulSet: platformer-minio                   │
+│  Secret: platformer-minio (from Jenkins)         │
+│  Job: platformer-minio-init (bucket + policy)    │
 └──────────────────────────────────────────────────┘
 ```
+
+Bootstrap: Jenkins credentials id `minio-assets` создаёт Secret `platformer-minio` (ключи не в git). Job `platformer-minio-init` ждёт MinIO Ready, создаёт bucket `platformer-assets` и anonymous `s3:GetObject` на `assets/*`. Проверка: `curl -sfI` `/` и `/media/assets/maps/level-01.json`.
+
 
 | Компонент | Технология | Порт | Репозиторий образа |
 |---|---|---|---|
 | `platformer-frontend` | nginx + Vite static | 80 | `3224142123/platformer` |
+| `platformer-minio` | MinIO object storage | 9000/9001 | `minio/minio` |
 
 Ресурсы: ~64–128 MB RAM, минимальный CPU.
 
@@ -53,7 +65,7 @@ k3s Cluster (тот же, что у CV)       │
 
 - k3s на сервере с Traefik и Let's Encrypt (`certresolver: le`)
 - Jenkins в Docker с доступом к `/var/run/docker.sock` и kubeconfig
-- Credentials в Jenkins: `dockerhub-credentials`, `kubeconfig`
+- Credentials в Jenkins: `dockerhub-credentials`, `kubeconfig`, `minio-assets`, `s3manager-http`
 - Порты 80, 443, 8080 открыты
 
 Подробнее: `U:\projects\cv\docs\DEPLOYMENT.md`
@@ -82,6 +94,14 @@ dig platformer.balashov-maxim.ru +short
 nslookup platformer.balashov-maxim.ru
 ```
 
+Admin host: A or CNAME `minio-adminer.balashov-maxim.ru` → тот же IP кластера, что и игровой хост (см. [§10](#10-s3manager-admin-ui)).
+
+```bash
+dig minio-adminer.balashov-maxim.ru +short
+# или
+nslookup minio-adminer.balashov-maxim.ru
+```
+
 ---
 
 ## 4. Docker Hub
@@ -101,7 +121,8 @@ nslookup platformer.balashov-maxim.ru
 3. Pipeline → Definition: **Pipeline script from SCM**
 4. SCM: Git, URL репозитория platformer, ветка `main`
 5. Script Path: `Jenkinsfile.bootstrap`
-6. **Build Now**
+6. Credentials → Add → **Username with password**, id `s3manager-http` (HTTP login админки, не MinIO root). Нужен до **Build Now**; пароль не в git. На агенте для htpasswd — `apache2-utils`, иначе bootstrap возьмёт `openssl passwd -apr1`.
+7. **Build Now**
 
 Pipeline создаст namespace, `dockerhub-secret`, Service, Deployment и Ingress.
 
@@ -191,7 +212,7 @@ curl -I https://platformer.balashov-maxim.ru
 | Файл | Назначение | Когда запускать |
 |---|---|---|
 | `Jenkinsfile` | Сборка, push, деплой | push в main (webhook) |
-| `Jenkinsfile.bootstrap` | Первичный подъём k8s | один раз вручную |
+| `Jenkinsfile.bootstrap` | Первичный подъём k8s (MinIO + s3manager UI) | один раз вручную |
 
 ---
 
@@ -207,14 +228,14 @@ kubectl logs -n platformer deployment/platformer-frontend
 # Ingress
 kubectl get ingress -n platformer
 
-# HTTP
-curl -sf https://platformer.balashov-maxim.ru/ -o /dev/null && echo OK
+# HTTP (SPA `/`)
+curl -sfI https://platformer.balashov-maxim.ru/ 
 
-# Ассеты (пример карты)
-curl -sf https://platformer.balashov-maxim.ru/assets/maps/level-01.json | head
+# MinIO media (canonical map; not the nginx image)
+curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json
 ```
 
-В браузере откройте https://platformer.balashov-maxim.ru — должна загрузиться игра.
+В браузере игра должна грузить спрайты и карты с `/media/` (MinIO), не из nginx-образа.
 
 ---
 
@@ -303,6 +324,117 @@ platformer/
 | `ImagePullBackOff` | Нет secret или неверный токен Docker Hub | Пересоздать `dockerhub-secret`, проверить репозиторий |
 | 502 / нет ответа | Pod не Ready | `kubectl describe pod`, `kubectl logs` |
 | Сертификат не выдаётся | DNS не указывает на сервер или порт 80 закрыт | `dig`, проверить firewall |
-| Игра без ассетов | `public/assets` не попали в образ | Проверить `docker build` и содержимое `/usr/share/nginx/html/assets` |
+| Игра без ассетов | нет объектов в MinIO / нет `/media/` | UI или `npm run assets:push` на `minio-adminer`, затем `curl -sfI` `/media/assets/maps/level-01.json` |
 | Jenkins Test падает с `npm ci` EUSAGE / нет `package-lock.json` | `docker run -v $PWD` при Jenkins-in-Docker монтирует пустой путь хоста | Quality gate должен идти через `docker build --target build`, не через bind-mount |
 | Jenkins Test падает на lint/test/build | Ошибка в коде или зависимостях | Запустить локально `npm run lint && npm run test && npm run build` |
+
+---
+
+## 9. MinIO
+
+Архитектура: Ingress `/` → frontend nginx (SPA + hashed `/assets/index-*.js`); Ingress `/media` → MinIO bucket `platformer-assets` (path-style `/platformer-assets/assets/...` после Traefik rewrite). Канонический URL карты: `/media/assets/maps/level-01.json`. Консоль MinIO `:9001` без Ingress — только `kubectl port-forward`.
+
+### Bootstrap Secret / Job
+
+1. В Jenkins заведите credentials id `minio-assets` (`MINIO_USER` / `MINIO_PASS`). Не коммитьте живые ключи.
+2. Bootstrap (`Jenkinsfile.bootstrap`) создаёт Secret `platformer-minio` из этих credentials (пример без секретов: `k8s/minio/secret.yaml.example`).
+3. Применяет StatefulSet/Service MinIO, Middleware и Ingress `/media`.
+4. Ждёт MinIO Ready, затем запускает Job `platformer-minio-init`: bucket `platformer-assets` и anonymous download-only `s3:GetObject` на `assets/*`.
+
+### Credentials
+
+- Кластер: Jenkins `credentialsId: minio-assets` → Secret `platformer-minio` (`MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`).
+- Локальный **push**: `S3MANAGER_URL` / `S3MANAGER_USER` / `S3MANAGER_PASSWORD` в `.env.example` (пароль пустой). Скопируйте в `.env.local`, не коммитьте. Это HTTP BasicAuth админки, не MinIO root.
+- Локальный / Jenkins **pull**: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` (Jenkins подставляет `MINIO_USER` / `MINIO_PASS`).
+
+### Verify curls
+
+```bash
+curl -sfI https://platformer.balashov-maxim.ru/
+curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json
+```
+
+### One-time seed
+
+С ноутбука заливка идёт в UI или `npm run assets:push` (HTTP на s3manager), не через `mc` на `:9000`:
+
+```bash
+# .env.local: S3MANAGER_USER / S3MANAGER_PASSWORD (id Jenkins s3manager-http)
+npm run assets:push
+```
+
+Браузер: https://minio-adminer.balashov-maxim.ru/ → бакет `platformer-assets` → префикс `assets/` (= `public/assets/`).
+
+`npm run assets:pull` по-прежнему зеркалит бакет → `public/assets` через `mc` (Jenkins и локальный clone).
+
+### Untrack blobs after `/media/` playtest
+
+Когда прод-плейтест с `/media/` подтверждён (карта и спрайты грузятся из MinIO):
+
+```bash
+git rm --cached -- public/assets/**/*.png public/assets/**/*.svg public/assets/**/*.json
+# commit gitignore + .gitkeep; do not rewrite history
+```
+
+Каталоги `public/assets/maps|images|sprite|tilesets|audio` остаются с `.gitkeep`. History не переписывайте (`git filter-branch` / force-push не нужны).
+
+### Local verify
+
+```bash
+npm run assets:pull
+npm run validate:maps
+npm test
+npm run build
+```
+
+### Cluster verify
+
+1. MinIO Ready: `kubectl get pods -n platformer` — `platformer-minio-0` в статусе Ready.
+2. `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` → HTTP 200.
+3. В браузере откройте https://platformer.balashov-maxim.ru/ — спрайты и карты должны грузиться с MinIO (`/media/`), не из nginx-образа.
+
+---
+
+## 10. s3manager admin UI
+
+Browser file manager for bucket `platformer-assets` on a dedicated host. Create DNS and Jenkins credential `s3manager-http` before bootstrap `Build Now`.
+
+### DNS
+
+Add an A or CNAME record `minio-adminer.balashov-maxim.ru` pointing at the same cluster address as `platformer.balashov-maxim.ru`. Let's Encrypt (`certresolver: le`) will not issue a cert until DNS answers. This host is **not** a path on the game Ingress.
+
+```bash
+dig minio-adminer.balashov-maxim.ru +short
+# or
+nslookup minio-adminer.balashov-maxim.ru
+```
+
+### Jenkins credential (HTTP BasicAuth)
+
+Jenkins → Credentials → Add → Username with password, **id** `s3manager-http`. Password is not committed. Bootstrap stage `s3manager` creates live Secret `platformer-s3manager-auth` from that credential (`kubectl create secret ... --dry-run=client | kubectl apply`). Example file `k8s/minio/s3manager-auth-secret.yaml.example` is placeholders only (`changeme` / `REPLACE_ME`) and must not be applied.
+
+### BasicAuth vs MinIO root keys (task 4.3)
+
+HTTP login on `minio-adminer.balashov-maxim.ru` is Traefik BasicAuth. It is **not** the MinIO root user (`MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` in Secret `platformer-minio`) unless the operator deliberately reuses the same password. S3 keys stay in-cluster on the s3manager pod; they are not typed into the browser.
+
+### CLI / pre-push (`assets:push`)
+
+`npm run assets:push` POSTs files from `public/assets/` to `https://minio-adminer.balashov-maxim.ru/Default/api/buckets/platformer-assets/objects` with BasicAuth (same login as the UI). Object key is `assets/<relative-path>`. Env: `S3MANAGER_URL`, `S3MANAGER_USER`, `S3MANAGER_PASSWORD` in `.env.local`. If user/pass are missing and stdin is a TTY, the CLI prompts. Git GUI / Cursor without TTY: put creds in `.env.local` or `git push --no-verify`.
+
+`npm run assets:pull` still uses `mc` against the MinIO S3 API (Jenkins).
+
+### Verify (after DNS + bootstrap)
+
+```bash
+# Unauthenticated → HTTP 401 (not the s3manager file browser)
+curl -sI https://minio-adminer.balashov-maxim.ru/
+
+# Authenticated → HTTP 200 s3manager UI (not frontend index.html)
+curl -sI -u '<basic-user>:<basic-pass>' https://minio-adminer.balashov-maxim.ru/
+
+# Upload under prefix assets/ → S3 key platformer-assets/assets/<relative-path>
+# (same relative tree as public/assets/)
+```
+
+MinIO console `:9001` still has no public route. Game host `platformer.balashov-maxim.ru` `/` and `/media` are unchanged.
+

@@ -1,0 +1,1 @@
+# Keep directory after runtime png/svg/json/audio are gitignored (MinIO is source of truth).

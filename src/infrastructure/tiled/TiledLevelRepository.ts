@@ -11,16 +11,18 @@ import { isDoorFacing, isMapEdge, RoomTransitionRules } from '@domain/services/R
 import { Vector2 } from '@domain/value-objects/Vector2';
 
 import type { ILevelRepository } from '@application/ports/ILevelRepository';
+import { assetUrl } from '@game/assetUrl';
 
 import type { TiledMapJson, TiledObject, TiledObjectGroup } from './TiledTypes';
 
 const OBJECTS_LAYER_NAME = 'objects';
 
 export class TiledLevelRepository implements ILevelRepository {
-  constructor(private readonly basePath = '/assets/maps') {}
+  /** @param basePath Maps directory under `assets/`; `load` fetches `{assetBaseUrl}assets/maps/{levelId}.json`. */
+  constructor(private readonly basePath = 'assets/maps') {}
 
   async load(levelId: string): Promise<RoomDefinition> {
-    const response = await fetch(`${this.basePath}/${levelId}.json`);
+    const response = await fetch(assetUrl(`${this.basePath}/${levelId}.json`));
     if (!response.ok) {
       throw new Error(`Failed to load level "${levelId}": ${response.status} ${response.statusText}`);
     }

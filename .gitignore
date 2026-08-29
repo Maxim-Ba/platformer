@@ -3,7 +3,7 @@ dist
 *.local
 .DS_Store
 
-# Runtime blobs live in MinIO (npm run assets:push / assets:pull). tiled/ stays committable.
+# Runtime blobs live in MinIO (laptop: s3manager push; Jenkins: assets:pull). tiled/ stays committable.
 public/assets/**/*.png
 public/assets/**/*.svg
 public/assets/**/*.json
@@ -13,3 +13,4 @@ public/assets/**/*.wav
 public/assets/**/*.m4a
 public/assets/**/*.flac
 !public/assets/**/.gitkeep
+.env
