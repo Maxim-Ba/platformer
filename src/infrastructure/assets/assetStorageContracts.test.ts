@@ -83,6 +83,7 @@ describe('.env.production Docker build (task 4.5)', () => {
 
     const dockerignore = readRepoFile('.dockerignore');
     expect(dockerignore).toMatch(/^\.env\.\*$/m);
+    expect(dockerignore).toMatch(/^!\.env\.example\s*$/m);
     expect(dockerignore).toMatch(/^!\.env\.production\s*$/m);
 
     const dockerfile = dropFullLineComments(readRepoFile('Dockerfile'), '#');
