@@ -1,0 +1,68 @@
+# Task 1.1 / 1.2 — Deployment platformer-s3manager (architect stub).
+#
+# Args: image cloudlena/s3manager with a released tag (NOT latest); namespace
+#       platformer; CPU/memory requests and limits; containerPort matching the
+#       image listen port (typically 8080); S3 env from Secret platformer-minio
+#       to ClusterIP platformer-minio:9000 (ENDPOINT without scheme, USE_SSL=false,
+#       ACCESS_KEY_ID/SECRET_ACCESS_KEY via secretKeyRef MINIO_ROOT_USER /
+#       MINIO_ROOT_PASSWORD, optional BUCKET_NAME=platformer-assets, PORT=8080).
+#       Path-style is implied by a custom host:port ENDPOINT (upstream README /
+#       cloudlena/s3manager#7: no scheme; no FORCE_PATH_STYLE env in README).
+# Returns: Ready Deployment whose pod talks to in-cluster MinIO :9000, not
+#       public hostname and not console :9001.
+#
+# Verify (repo artifact, not live cluster curl in this change):
+#   unauthenticated https://minio-adminer.balashov-maxim.ru/ → 401
+#   authenticated → 200 s3manager UI (not frontend index.html)
+#   upload under assets/ → S3 key platformer-assets/assets/<relative-path>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platformer-s3manager
+  namespace: platformer
+  labels:
+    app: platformer-s3manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: platformer-s3manager
+  template:
+    metadata:
+      labels:
+        app: platformer-s3manager
+    spec:
+      containers:
+        - name: s3manager
+          # Released tag from Docker Hub (v0.8.0); do not use latest.
+          image: cloudlena/s3manager:v0.8.0
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          env:
+            # In-cluster S3: ENDPOINT without scheme, TLS off, keys from Secret.
+            - name: ENDPOINT
+              value: platformer-minio:9000
+            - name: USE_SSL
+              value: "false"
+            - name: ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: platformer-minio
+                  key: MINIO_ROOT_USER
+            - name: SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: platformer-minio
+                  key: MINIO_ROOT_PASSWORD
+            - name: BUCKET_NAME
+              value: platformer-assets
+            - name: PORT
+              value: "8080"

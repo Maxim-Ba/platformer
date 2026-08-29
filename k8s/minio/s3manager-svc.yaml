@@ -1,0 +1,21 @@
+# Task 1.3 — ClusterIP Service for the s3manager UI.
+#
+# Args: Deployment selector app=platformer-s3manager; UI port typically 8080
+#       (same as container PORT / containerPort).
+# Returns: ClusterIP Service platformer-s3manager in namespace platformer.
+# MinIO console :9001 MUST NOT be a port on this Service or any Ingress backend.
+apiVersion: v1
+kind: Service
+metadata:
+  name: platformer-s3manager
+  namespace: platformer
+  labels:
+    app: platformer-s3manager
+spec:
+  type: ClusterIP
+  selector:
+    app: platformer-s3manager
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

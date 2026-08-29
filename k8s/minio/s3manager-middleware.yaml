@@ -1,0 +1,16 @@
+# Task 2.1 — Traefik BasicAuth in front of s3manager (same CRD style as
+# k8s/minio/middleware.yaml).
+#
+# Args: Secret platformer-s3manager-auth (htpasswd key `users`); namespace
+#       platformer.
+# Returns: Middleware platformer-s3manager-auth (apiVersion traefik.io/v1alpha1).
+# Wire this Middleware only to Ingress platformer-s3manager on host
+# minio-adminer.balashov-maxim.ru — never to platformer.balashov-maxim.ru.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: platformer-s3manager-auth
+  namespace: platformer
+spec:
+  basicAuth:
+    secret: platformer-s3manager-auth

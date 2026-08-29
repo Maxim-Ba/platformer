@@ -120,6 +120,49 @@ pipeline {
       }
     }
 
+    // Task 3.1 / 3.2: after MinIO Init. HTTP BasicAuth is Jenkins credential id
+    // `s3manager-http` (username/password — do not commit the password).
+    // Args: credentialsId s3manager-http; Secret platformer-s3manager-auth
+    //       (htpasswd key `users`); files k8s/minio/s3manager-deploy.yaml,
+    //       s3manager-svc.yaml, s3manager-middleware.yaml, s3manager-ingress.yaml;
+    //       namespace platformer.
+    // Returns: live Secret via `kubectl create secret ... --dry-run=client -o yaml |
+    //       kubectl apply -f -` (same pattern as platformer-minio); then apply
+    //       Deployment/Service/Middleware/Ingress as individual files; wait Ready.
+    // MUST NOT `kubectl apply -f k8s/minio/` and MUST NOT apply any path containing
+    // `secret.yaml.example` (including s3manager-auth-secret.yaml.example).
+    // MUST NOT fold s3manager into the game Jenkinsfile image build/push (task 3.3).
+    stage('s3manager') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          withCredentials([
+            usernamePassword(
+              credentialsId: 's3manager-http',
+              usernameVariable: 'S3MANAGER_HTTP_USER',
+              passwordVariable: 'S3MANAGER_HTTP_PASS'
+            )
+          ]) {
+            sh '''
+              if command -v htpasswd >/dev/null 2>&1; then
+                S3MANAGER_HTPASSWD=$(htpasswd -nbB "$S3MANAGER_HTTP_USER" "$S3MANAGER_HTTP_PASS")
+              else
+                S3MANAGER_HTPASSWD="${S3MANAGER_HTTP_USER}:$(openssl passwd -apr1 "$S3MANAGER_HTTP_PASS")"
+              fi
+              kubectl create secret generic platformer-s3manager-auth \
+                --namespace=${NS} \
+                --from-literal=users="$S3MANAGER_HTPASSWD" \
+                --dry-run=client -o yaml | kubectl apply -f -
+              kubectl apply -f k8s/minio/s3manager-deploy.yaml
+              kubectl apply -f k8s/minio/s3manager-svc.yaml
+              kubectl apply -f k8s/minio/s3manager-middleware.yaml
+              kubectl apply -f k8s/minio/s3manager-ingress.yaml
+              kubectl rollout status deployment/platformer-s3manager -n ${NS} --timeout=180s
+            '''
+          }
+        }
+      }
+    }
+
     stage('Applications') {
       steps {
         withKubeConfig([credentialsId: 'kubeconfig']) {

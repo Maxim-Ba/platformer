@@ -1,0 +1,41 @@
+# Task 2.2 / 2.3 / 5.1–5.3 — Ingress for the s3manager admin host only.
+#
+# Args: host minio-adminer.balashov-maxim.ru; path / Prefix; TLS certresolver le;
+#       middleware platformer-s3manager-auth; backend Service platformer-s3manager
+#       port 8080; TLS secret DISTINCT from platformer-balashov-maxim-tls.
+# Returns: Ingress platformer-s3manager in namespace platformer.
+#
+# MUST NOT add a path on platformer.balashov-maxim.ru for s3manager.
+# k8s/ingress/ingress.yaml is intentionally unchanged (game `/` and `/media` only).
+# MinIO console :9001 still has no public Ingress route.
+#
+# Verify contracts (documented here; this repo does not curl production):
+#   curl -sI https://minio-adminer.balashov-maxim.ru/                    → HTTP 401
+#   curl -sI -u user:pass https://minio-adminer.balashov-maxim.ru/      → HTTP 200 s3manager UI
+#     (body is NOT frontend index.html)
+#   Upload under prefix assets/ → S3 object platformer-assets/assets/<relative-path>
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platformer-s3manager
+  namespace: platformer
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: le
+    traefik.ingress.kubernetes.io/router.middlewares: platformer-platformer-s3manager-auth@kubernetescrd
+spec:
+  tls:
+    - hosts:
+        - minio-adminer.balashov-maxim.ru
+      secretName: minio-adminer-balashov-maxim-tls
+  rules:
+    - host: minio-adminer.balashov-maxim.ru
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: platformer-s3manager
+                port:
+                  number: 8080
