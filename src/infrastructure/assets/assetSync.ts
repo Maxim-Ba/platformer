@@ -118,6 +118,12 @@ function listLocalRuntimeFiles(localAssetsDir: string): { absPath: string; relat
   return found.sort((a, b) => a.relativePosix.localeCompare(b.relativePosix));
 }
 
+function uint8ToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 function contentTypeFor(fileName: string): string {
   const ext = path.extname(fileName).toLowerCase();
   if (ext === '.json') {
@@ -293,7 +299,7 @@ async function uploadViaS3managerHttp(input: Parameters<UploadS3managerObject>[0
   const base = input.adminUrl.replace(/\/+$/, '');
   const url = `${base}/${encodeURIComponent(input.instance)}/api/buckets/${encodeURIComponent(input.bucket)}/objects`;
   const form = new FormData();
-  form.append('file', new Blob([input.body], { type: input.contentType }), input.fileName);
+  form.append('file', new Blob([uint8ToArrayBuffer(input.body)], { type: input.contentType }), input.fileName);
   form.append('path', input.objectKey);
   const response = await s3managerFetch(url, input.username, input.password, {
     method: 'POST',

@@ -1,5 +1,6 @@
 #!/bin/sh
-# Task 3.3: publish public/assets/ via s3manager HTTPS before git push reaches GitHub.
+# Task 3.3: typecheck, then publish public/assets/ via s3manager HTTPS before GitHub.
+# `tsc` is not run by vitest; Jenkins Quality fails on `npm run build` without this.
 # Install: git config core.hooksPath scripts/git-hooks
 # Credentials: S3MANAGER_USER / S3MANAGER_PASSWORD in .env.local, or a TTY prompt.
 # IDE/GUI push without TTY and without .env.local: git push --no-verify.
@@ -9,4 +10,5 @@
 # then commit gitignore + .gitkeep (do not rewrite history).
 set -e
 cd "$(git rev-parse --show-toplevel)"
+npm run typecheck
 npm run assets:push

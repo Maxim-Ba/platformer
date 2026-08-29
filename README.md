@@ -95,10 +95,10 @@ npm run validate:maps
 
 ```bash
 npm run validate:maps
-npm run test
-npm run lint
-npm run build
+npm run quality
 ```
+
+`npm run quality` = lint + test + `tsc`. Vitest не проверяет типы: ошибки вроде `TS2322` (`Uint8Array` vs DOM `Blob`) видны только компилятору. Полный паритет с Docker Quality: `npm run lint && npm run test && npm run build`.
 
 ## Project structure
 

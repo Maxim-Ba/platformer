@@ -55,10 +55,21 @@ describe('gitignore runtime blobs (task 3.2)', () => {
 });
 
 describe('pre-push hook (task 3.3)', () => {
-  it('runs assets:push and documents git config core.hooksPath', () => {
+  it('runs typecheck then assets:push and documents git config core.hooksPath', () => {
+    const pkg = JSON.parse(readRepoFile('package.json')) as {
+      scripts?: Record<string, string>;
+    };
+    expect(pkg.scripts?.typecheck).toMatch(/tsc/);
+    expect(pkg.scripts?.quality).toMatch(/lint/);
+    expect(pkg.scripts?.quality).toMatch(/test/);
+    expect(pkg.scripts?.quality).toMatch(/typecheck/);
+
     const hook = readRepoFile('scripts/git-hooks/pre-push');
     expect(hook.startsWith('#!')).toBe(true);
-    expect(dropFullLineComments(hook, '#')).toMatch(/npm run assets:push/);
+    const hookBody = dropFullLineComments(hook, '#');
+    expect(hookBody).toMatch(/npm run typecheck/);
+    expect(hookBody).toMatch(/npm run assets:push/);
+    expect(hookBody.search(/npm run typecheck/)).toBeLessThan(hookBody.search(/npm run assets:push/));
     expect(hook).toMatch(/git config core\.hooksPath scripts\/git-hooks/);
   });
 });
