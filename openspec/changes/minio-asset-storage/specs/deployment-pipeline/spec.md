@@ -21,7 +21,12 @@ The Jenkins pipeline MUST populate `public/assets/` from MinIO before running ch
 #### Scenario: Verify checks MinIO public object
 
 - **WHEN** the Verify stage runs after a successful Deploy
-- **THEN** the pipeline MUST request `SITE_URL/media/assets/maps/level-01.json` and treat a non-200 response as failure
+- **THEN** the pipeline MUST request `SITE_URL/media/assets/maps/level-01.json`, treat a non-200 response as failure, and MUST fail if the body is SPA HTML (`<!doctype html`) rather than Tiled JSON containing `"tilesets"` and `"layers"`
+
+#### Scenario: Deploy reapplies media routing
+
+- **WHEN** the Deploy stage updates `platformer-frontend`
+- **THEN** the pipeline MUST apply `k8s/minio/middleware.yaml` and `k8s/ingress/ingress.yaml` before `kubectl set image`, so `/media` keeps the MinIO rewrite chain
 
 ### Requirement: Production image omits runtime asset blobs
 

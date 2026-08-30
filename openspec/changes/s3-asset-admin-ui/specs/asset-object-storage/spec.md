@@ -33,7 +33,7 @@ Runtime assets MUST be downloadable over HTTPS on the same host as the game with
 #### Scenario: Map JSON is publicly readable
 
 - **WHEN** a client requests `https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` after the object has been uploaded
-- **THEN** the response MUST be HTTP 200 with the map JSON body
+- **THEN** the response MUST be HTTP 200 with the map JSON body (Tiled `tilesets` and `layers`), not frontend `index.html`
 
 #### Scenario: Sprite file is publicly readable
 

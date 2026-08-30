@@ -38,7 +38,9 @@ Change `platformer-cicd-deploy` уже закрыл деплой игры. CDN/o
 
 ### 2. Один origin: Ingress path `/media/` → бакет
 
-**Решение:** существующий Ingress хоста `platformer.balashov-maxim.ru` получает второй path `/media` (Prefix) на Service MinIO:9000. Traefik middleware: `stripPrefix: /media` + `addPrefix: /platformer-assets`. Браузер запрашивает `/media/assets/maps/level-01.json`, MinIO видит path-style `/platformer-assets/assets/maps/level-01.json`.
+**Решение:** существующий хост `platformer.balashov-maxim.ru` получает **второй Ingress** `platformer-minio` с Prefix `/media` на Service MinIO:9000 и `router.priority: "100"`. Frontend остаётся отдельным Ingress `platformer-ingress` на `/`. Traefik допускает один тип на объект Middleware, поэтому rewrite — цепочка из трёх CRD: `platformer-minio-media-strip` (`stripPrefix: /media`) → `platformer-minio-media-add` (`addPrefix: /platformer-assets`) → head `platformer-minio-media` (`chain`). Браузер запрашивает `/media/assets/maps/level-01.json`, MinIO видит path-style `/platformer-assets/assets/maps/level-01.json`.
+
+Если strip и add живут в одном Middleware, `/media` не rewrite'ится: Prefix `/` отдаёт SPA `index.html` (HTTP 200 HTML), Phaser стартует пустую GameScene. Jenkins Verify проверяет не только статус, но и тело (есть `"tilesets"` / `"layers"`, нет `<!doctype html`). Frontend nginx отвечает 404 на `location ^~ /media/`, если запрос всё же попал в под игры. CD каждый деплой заново применяет `k8s/minio/middleware.yaml` и `k8s/ingress/ingress.yaml`.
 
 Бакет с anonymous `s3:GetObject` (download-only, без ListBucket публично). Console только через `kubectl port-forward`.
 
@@ -59,6 +61,7 @@ developer working tree (public/assets/* на диске, gitignore)
                 │
                 ▼
         Verify: GET SITE_URL/ и GET SITE_URL/media/assets/maps/level-01.json
+                (HTTP 200 + Tiled JSON, не SPA HTML)
 ```
 
 Команды: `npm run assets:push` / `assets:pull` (HTTPS s3manager на `minio-adminer.balashov-maxim.ru`, Traefik BasicAuth). Hook в `scripts/git-hooks/pre-push`, установка: `git config core.hooksPath scripts/git-hooks`. Креды локально в `.env.local` (уже в `.gitignore`); в Jenkins — credentials id `s3manager-http`. Secret MinIO root остаётся `minio-assets` только для bootstrap.
@@ -105,7 +108,7 @@ Dockerfile target `build` по-прежнему видит `public/assets` в co
 - **[Первый clone без MinIO-доступа]** → нет файлов, `validate:maps` и playtest не работают. Митигация: README `assets:pull`; для офлайна достаточно один раз скачанной папки (gitignore).
 - **[Anonymous GetObject]** → любой, кто знает URL, скачает ассеты. Для клиентской игры это норма (они и так в браузере). Не класть в бакет секреты и WAV-исходники.
 - **[PVC на одной ноде k3s]** → потеря диска = потеря бакета. Митигация: периодический `assets:pull` на рабочую машину; 5Gi достаточно для pet-проекта.
-- **[Traefik rewrite ошибочен]** → 403/404 на `/media`. Митигация: в DEPLOYMENT.md `curl -sfI` канонического объекта; init Job документирует ожидаемый key.
+- **[Traefik rewrite ошибочен]** → 403/404 на `/media` **или HTTP 200 HTML**. Митигация: отдельные Ingress `/` и `/media`; chain из трёх Middleware (один тип на CRD); в DEPLOYMENT.md `curl -sfI` **и** проверка тела на `"tilesets"`; init Job документирует ожидаемый key.
 - **[История git уже содержит PNG]** → GitHub всё ещё хранит старые блобы. Митигация: Non-Goal rewrite; новые коммиты файлы не добавляют.
 - **[Vite копирует `public/` в `dist/`]** → без очистки слой nginx снова greет бинарники. Митигация: явный `rm` в Dockerfile после build.
 
@@ -113,7 +116,7 @@ Dockerfile target `build` по-прежнему видит `public/assets` в co
 
 1. Залить манифесты MinIO + Secret из Jenkins credentials; дождаться Running; прогнать init Job.
 2. Пока файлы ещё в git: с рабочей машины `npm run assets:push` (или UI `minio-adminer`) в префикс `assets/`.
-3. Проверить `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json`.
+3. Проверить `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` и что тело — Tiled JSON, не HTML.
 4. Включить `VITE_ASSET_BASE_URL=/media/` в production build; выкатить образ; playtest что спрайты/карты идут с `/media/`.
 5. Добавить gitignore, hook, `git rm --cached` для runtime-файлов; оставить `.gitkeep`.
 6. Переключить Jenkins: **pull → Test/Build → Deploy → Verify /media**. Убрать временный publish-from-checkout.

@@ -37,9 +37,9 @@ Credentials: `S3MANAGER_USER` / `S3MANAGER_PASSWORD` in `.env.local` (same as UI
 Одноразовые шаги оператора (не из CI):
 
 - Seed: browser UI or `npm run assets:push` into prefix `assets/` (= `public/assets/`).
-- Untrack (7.4): after prod playtest from `/media/`, `git rm --cached` runtime blobs, commit gitignore + `.gitkeep` (do not rewrite history).
-- Local verify (7.5): `npm run assets:pull`, `npm run validate:maps`, `npm test`, `npm run build`.
-- Cluster verify (7.6): MinIO Ready; `curl -sfI` map JSON on `/media/`; game loads sprites/maps from MinIO in the browser.
+- Untrack: after prod playtest from `/media/`, `git rm --cached` runtime blobs, commit gitignore + `.gitkeep` (do not rewrite history).
+- Local verify: `npm run assets:pull`, `npm run validate:maps`, `npm test`, `npm run build`.
+- Cluster verify: MinIO Ready; `curl -sfI` map JSON on `/media/`; body is Tiled JSON not HTML; game loads sprites/maps from MinIO in the browser.
 
 Browser UI: `https://minio-adminer.balashov-maxim.ru/` (BasicAuth / HTTP login). HTTP login ≠ MinIO root unless the operator reuses the password.
 
@@ -104,8 +104,8 @@ npm run quality
 
 ```
 ├── public/
-│   └── assets/          # статические игровые ассеты
-│       ├── maps/        # Tiled карты (JSON)
+│   └── assets/          # runtime-файлы локально и в MinIO (gitignore png/svg/json/audio; в git только .gitkeep)
+│       ├── maps/        # Tiled карты (JSON); в проде канонический URL /media/assets/maps/...
 │       ├── images/      # спрайты, тайлсеты
 │       │   └── player-sheet.png  # spritesheet игрока (см. Player assets)
 │       ├── sprite/      # исходники анимаций (до сборки в sheet)
@@ -232,6 +232,7 @@ Game → Level Complete (победа: выход level_exit)
 5. Тайлсет: PNG в `public/assets/tilesets/platformer-tiles.png` (источник — `tiled/tilesets/`).
 6. Проверка: `npm run dev` → Main Menu → уровень загружается из `assets/maps/level-01.json`.
 7. Валидация: `npm run validate:maps` — проверка parse, слоёв, дверей и графа мира (см. [level-authoring.md](docs/level-authoring.md#валидация-карт-npm-runvalidatemaps)).
+8. Прод: `npm run assets:push` (или UI на `minio-adminer`) — иначе GitHub обновится, а бакет останется со старой картой.
 
 При добавлении нового уровня: экспортируйте `level-02.json` и передайте `levelId` в `GameScene` (см. `DEFAULT_LEVEL_ID` в `src/game/constants.ts`).
 

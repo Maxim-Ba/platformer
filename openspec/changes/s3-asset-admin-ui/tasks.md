@@ -28,4 +28,4 @@
 
 - [x] 5.1 Unauthenticated `curl -sI https://minio-adminer.balashov-maxim.ru/` returns 401
 - [x] 5.2 Authenticated request returns 200 and the s3manager UI (not frontend `index.html`)
-- [ ] 5.3 Upload a test object under `assets/` and confirm it exists on the S3 API (in-cluster curl or existing `/media` once that route returns non-HTML)
+- [x] 5.3 Upload a test object under `assets/` and confirm it exists on the S3 API (in-cluster curl or existing `/media` once that route returns non-HTML)

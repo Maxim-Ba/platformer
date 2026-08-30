@@ -28,34 +28,42 @@ GitHub (platformer)
     ▼
 Jenkins (на сервере) ──► Docker Hub
     │   assets:pull + lint + test + build   (3224142123/platformer)
-    │ kubectl set image               │
-    ▼                                 │
-k3s Cluster (тот же, что у CV)       │
-┌─────────────────────────────────────┴────────────┐
-│  Namespace: platformer                           │
-│                                                  │
-│  Traefik Ingress                                 │
-│    /      → platformer-frontend nginx:80         │
-│    /media → MinIO :9000 (bucket platformer-assets│
-│             prefix assets/; rewrite /media →     │
-│             /platformer-assets)                  │
-│                                                  │
-│  Pod: platformer-frontend (nginx + hashed dist)  │
-│  StatefulSet: platformer-minio                   │
-│  Secret: platformer-minio (from Jenkins)         │
-│  Job: platformer-minio-init (bucket + policy)    │
-└──────────────────────────────────────────────────┘
+    │ kubectl apply middleware + Ingress    │
+    │ kubectl set image                     │
+    ▼                                       │
+k3s Cluster (тот же, что у CV)             │
+┌───────────────────────────────────────────┴────────────────┐
+│  Namespace: platformer                                     │
+│                                                            │
+│  Ingress platformer-ingress                                │
+│    /      → platformer-frontend nginx:80                   │
+│  Ingress platformer-minio (priority 100)                   │
+│    /media → MinIO :9000, bucket platformer-assets          │
+│             Traefik chain: strip /media, then add          │
+│             /platformer-assets (path-style S3)             │
+│  Ingress platformer-s3manager                              │
+│    minio-adminer.balashov-maxim.ru/                        │
+│             → s3manager :8080 + Traefik BasicAuth          │
+│                                                            │
+│  Pod: platformer-frontend (nginx + hashed dist)            │
+│  StatefulSet: platformer-minio                             │
+│  Deployment: platformer-s3manager                          │
+│  Secret: platformer-minio (Jenkins id minio-assets)        │
+│  Secret: platformer-s3manager-auth (id s3manager-http)     │
+│  Job: platformer-minio-init (bucket + policy)              │
+└────────────────────────────────────────────────────────────┘
 ```
 
-Bootstrap: Jenkins credentials id `minio-assets` создаёт Secret `platformer-minio` (ключи не в git). Job `platformer-minio-init` ждёт MinIO Ready, создаёт bucket `platformer-assets` и anonymous `s3:GetObject` на `assets/*`. Проверка: `curl -sfI` `/` и `/media/assets/maps/level-01.json`.
+Bootstrap: Jenkins credentials id `minio-assets` создаёт Secret `platformer-minio` (ключи не в git). Job `platformer-minio-init` ждёт MinIO Ready, создаёт bucket `platformer-assets` и anonymous `s3:GetObject` на `assets/*`. Проверка: `curl -sfI` `/` и `/media/assets/maps/level-01.json`; тело карты — Tiled JSON (`tilesets` / `layers`), не SPA `index.html`.
 
 
 | Компонент | Технология | Порт | Репозиторий образа |
 |---|---|---|---|
 | `platformer-frontend` | nginx + Vite static | 80 | `3224142123/platformer` |
-| `platformer-minio` | MinIO object storage | 9000/9001 | `minio/minio` |
+| `platformer-minio` | MinIO object storage | 9000/9001 | `minio/minio` (пин `RELEASE.*`) |
+| `platformer-s3manager` | cloudlena/s3manager UI | 8080 | `cloudlena/s3manager:v0.8.0` |
 
-Ресурсы: ~64–128 MB RAM, минимальный CPU.
+Ресурсы frontend ~64–128 MB RAM; MinIO requests 256Mi / limits 512Mi; s3manager 64–128Mi.
 
 ---
 
@@ -121,10 +129,12 @@ nslookup minio-adminer.balashov-maxim.ru
 3. Pipeline → Definition: **Pipeline script from SCM**
 4. SCM: Git, URL репозитория platformer, ветка `main`
 5. Script Path: `Jenkinsfile.bootstrap`
-6. Credentials → Add → **Username with password**, id `s3manager-http` (HTTP login админки, не MinIO root). Нужен до **Build Now**; пароль не в git. На агенте для htpasswd — `apache2-utils`, иначе bootstrap возьмёт `openssl passwd -apr1`.
+6. Credentials → Add → **Username with password**:
+   - id `minio-assets` (MinIO root → Secret `platformer-minio`)
+   - id `s3manager-http` (HTTP login админки, не MinIO root). Нужны до **Build Now**; пароли не в git. На агенте для htpasswd — `apache2-utils`, иначе bootstrap возьмёт `openssl passwd -apr1`.
 7. **Build Now**
 
-Pipeline создаст namespace, `dockerhub-secret`, Service, Deployment и Ingress.
+Pipeline создаст namespace, `dockerhub-secret`, Secret MinIO, StatefulSet MinIO, init Job, s3manager (Secret BasicAuth + Deployment + Ingress `minio-adminer`), frontend Service/Deployment и Ingress `/` + `/media`.
 
 ### Вариант B: вручную через kubectl
 
@@ -156,11 +166,15 @@ kubectl get pods -n platformer -w
 kubectl get ingress -n platformer
 ```
 
-Ожидаемый результат:
+Вариант B поднимает только frontend. MinIO, `/media` и админка `minio-adminer` живут в `k8s/minio/` и применяются **bootstrap** (рекомендуется). Ручной apply без Secret из Jenkins (`minio-assets`, `s3manager-http`) не создаст живые ключи: не делайте `kubectl apply -f k8s/minio/` (туда входят `*.yaml.example`).
+
+Ожидаемый результат после полного bootstrap (не только frontend):
 
 ```
 NAME                                   READY   STATUS    RESTARTS   AGE
 platformer-frontend-<hash>             1/1     Running   0          1m
+platformer-minio-0                     1/1     Running   0          1m
+platformer-s3manager-<hash>            1/1     Running   0          1m
 ```
 
 ### Первый HTTPS
@@ -206,8 +220,8 @@ curl -I https://platformer.balashov-maxim.ru
 | Test | `docker build --target build` → `npm ci`, `lint`, `test`, `build` внутри образа (без bind-mount workspace) |
 | Build | `docker build` → `3224142123/platformer:$GIT_COMMIT` (nginx + `dist/`, слои Test переиспользуются из кэша) |
 | Push | push в Docker Hub (`latest` + commit tag) |
-| Deploy | `kubectl set image` + `rollout status` |
-| Verify | `curl -sf` `/` и `curl -sfI` `/media/assets/maps/level-01.json` |
+| Deploy | `kubectl apply` `k8s/minio/middleware.yaml` и `k8s/ingress/ingress.yaml`, затем `kubectl set image` + `rollout status` |
+| Verify | `curl -sf` `/`; `curl -sfI` `/media/assets/maps/level-01.json`; тело — Tiled JSON (`"tilesets"` / `"layers"`), не `<!doctype html` |
 
 ### 6.4 Jenkins jobs в репозитории
 
@@ -235,9 +249,13 @@ curl -sfI https://platformer.balashov-maxim.ru/
 
 # MinIO media (canonical map; not the nginx image)
 curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json
+
+# Body must be Tiled JSON, not SPA index.html (HTTP 200 HTML is a Traefik/SPA miss)
+curl -sf https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json | head
+# expect "tilesets" and "layers"; fail if you see <!doctype html>
 ```
 
-В браузере игра должна грузить спрайты и карты с `/media/` (MinIO), не из nginx-образа.
+В браузере игра должна грузить спрайты и карты с `/media/` (MinIO), не из nginx-образа. Если DevTools показывает `Content-Type: text/html` на карте — Phaser стартует пустую GameScene.
 
 ---
 
@@ -311,10 +329,22 @@ platformer/
 │   │   └── platformer-frontend-deploy.yaml
 │   ├── services/
 │   │   └── platformer-frontend-svc.yaml
-│   └── ingress/
-│       └── ingress.yaml
+│   ├── ingress/
+│   │   └── ingress.yaml          # два объекта: / и /media
+│   └── minio/
+│       ├── statefulset.yaml
+│       ├── service.yaml
+│       ├── job.yaml
+│       ├── middleware.yaml       # chain: strip, затем add (три CRD)
+│       ├── secret.yaml.example
+│       ├── s3manager-deploy.yaml
+│       ├── s3manager-svc.yaml
+│       ├── s3manager-middleware.yaml
+│       ├── s3manager-ingress.yaml
+│       └── s3manager-auth-secret.yaml.example
 └── docs/
-    └── DEPLOYMENT.md          ← этот файл
+    ├── DEPLOYMENT.md          ← этот файл
+    └── MINIO-ASSETS.md
 ```
 
 ---
@@ -327,6 +357,7 @@ platformer/
 | 502 / нет ответа | Pod не Ready | `kubectl describe pod`, `kubectl logs` |
 | Сертификат не выдаётся | DNS не указывает на сервер или порт 80 закрыт | `dig`, проверить firewall |
 | Игра без ассетов | нет объектов в MinIO / нет `/media/` | UI или `npm run assets:push` на `minio-adminer`, затем `curl -sfI` `/media/assets/maps/level-01.json` |
+| `/media/...json` отдаёт HTML (игра чёрный экран) | Prefix `/` перехватывает `/media`, или strip+add в одном Traefik Middleware | Два Ingress (`platformer-minio` priority 100 и `platformer-ingress`); три Middleware (strip, add, chain). CD заново применяет `middleware.yaml` + `ingress.yaml`. Тело `curl -sf` должно содержать `"tilesets"`, не `<!doctype html` |
 | Jenkins Pull Assets падает с `npm: not found` (exit 127) | агент Jenkins — контейнер без Node | Не вызывать `npm` на агенте: `docker create` + `npm run assets:pull` в `node:20-alpine` к minio-adminer |
 | Jenkins Test падает с `npm ci` EUSAGE / нет `package-lock.json` | `docker run -v $PWD` при Jenkins-in-Docker монтирует пустой путь хоста | Quality gate должен идти через `docker build --target build`, не через bind-mount |
 | Jenkins Test падает на lint/test/build | Ошибка в коде или зависимостях | Запустить локально `npm run lint && npm run test && npm run build` |
@@ -335,7 +366,7 @@ platformer/
 
 ## 9. MinIO
 
-Архитектура: Ingress `/` → frontend nginx (SPA + hashed `/assets/index-*.js`); Ingress `/media` → MinIO bucket `platformer-assets` (path-style `/platformer-assets/assets/...` после Traefik rewrite). Канонический URL карты: `/media/assets/maps/level-01.json`. Консоль MinIO `:9001` без Ingress — только `kubectl port-forward`.
+Архитектура: отдельный Ingress `platformer-ingress` (`/` → frontend nginx, SPA + hashed `/assets/index-*.js`) и отдельный Ingress `platformer-minio` (`/media` → MinIO :9000, `router.priority: "100"`). Rewrite — **три** Traefik Middleware: `platformer-minio-media-strip` (`stripPrefix: /media`), `platformer-minio-media-add` (`addPrefix: /platformer-assets`), цепочка `platformer-minio-media`. Traefik допускает **один** тип на объект Middleware: strip+add в одном spec оставляют `/media` без rewrite, и Prefix `/` отдаёт SPA `index.html` (HTTP 200, `text/html`) — Phaser считает карту загруженной и рисует пустой экран. Path-style S3 после chain: `/platformer-assets/assets/...`. Канонический URL карты: `/media/assets/maps/level-01.json`. Консоль MinIO `:9001` без Ingress — только `kubectl port-forward`. Frontend nginx на всякий случай отвечает `404` на `location ^~ /media/`, если запрос всё же попал в под игры. CD на каждом деплое заново применяет `k8s/minio/middleware.yaml` и `k8s/ingress/ingress.yaml`.
 
 ### Bootstrap Secret / Job
 
@@ -392,7 +423,7 @@ npm run build
 ### Cluster verify
 
 1. MinIO Ready: `kubectl get pods -n platformer` — `platformer-minio-0` в статусе Ready.
-2. `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` → HTTP 200.
+2. `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` → HTTP 200. Тело `curl -sf` той же URL содержит `"tilesets"` и `"layers"`, не `<!doctype html`.
 3. В браузере откройте https://platformer.balashov-maxim.ru/ — спрайты и карты должны грузиться с MinIO (`/media/`), не из nginx-образа.
 
 ---

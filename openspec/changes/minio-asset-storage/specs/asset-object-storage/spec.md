@@ -26,7 +26,7 @@ Runtime assets MUST be downloadable over HTTPS on the same host as the game with
 #### Scenario: Map JSON is publicly readable
 
 - **WHEN** a client requests `https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` after the object has been uploaded
-- **THEN** the response MUST be HTTP 200 with the map JSON body
+- **THEN** the response MUST be HTTP 200 with the map JSON body (Tiled `tilesets` and `layers`), not frontend `index.html`
 
 #### Scenario: Sprite file is publicly readable
 
@@ -46,6 +46,11 @@ The repository MUST provide documented commands that upload the working tree `pu
 
 - **WHEN** a developer with s3manager BasicAuth runs `npm run assets:push` and `public/assets/` contains runtime files
 - **THEN** those files MUST appear in bucket `platformer-assets` under the `assets/` prefix with the same relative paths
+
+#### Scenario: Push rejects stub map JSON
+
+- **WHEN** a developer runs `npm run assets:push` and a file under `maps/*.json` is not a Tiled map (missing `tilesets` or `layers`)
+- **THEN** the command MUST fail and MUST NOT upload that body (a stub object would make Jenkins Verify pass on HTTP 200 HTML-or-JSON while Phaser cannot start the room)
 
 #### Scenario: Pull restores assets for local development
 

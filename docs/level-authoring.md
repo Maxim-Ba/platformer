@@ -7,14 +7,16 @@
 ```
 tiled/level-XX.tmx          ← исходник в Tiled (рекомендуется)
         ↓ экспорт JSON
-public/assets/maps/level-XX.json   ← runtime-файл, который грузит игра
+public/assets/maps/level-XX.json   ← локальный runtime-файл (gitignore; MinIO prefix assets/)
+        ↓  npm run assets:push   (или UI minio-adminer)
+MinIO /media/assets/maps/...       ← канонический URL в production
         ↓
 TiledLevelRepository        ← парсит объекты в LevelDefinition
         ↓
 GameScene                   ← рендерит тайлы + спавнит игрока, врагов, hazard и т.д.
 ```
 
-Игра загружает карту по `levelId`: файл `public/assets/maps/{levelId}.json`. Порядок уровней в кампании задаётся в `src/game/constants.ts` (`LEVEL_PROGRESSION`).
+Игра загружает карту по `levelId`. Локально Vite отдаёт `public/assets/maps/{levelId}.json`. В production `VITE_ASSET_BASE_URL=/media/` — тот же ключ с хоста игры: `/media/assets/maps/{levelId}.json`. Порядок уровней в кампании задаётся в `src/game/constants.ts` (`LEVEL_PROGRESSION`). После экспорта залейте файлы (`npm run assets:push` или UI); иначе прод останется со старой картой.
 
 ---
 
@@ -269,11 +271,11 @@ Validated 4 maps: 3 passed, 1 failed (1 error, 1 warning)
 |---------|-------------------|
 | `missing required object layer "objects"` | Нет слоя `objects` или другое имя слоя. |
 | `must contain exactly one "player_spawn"` | Ноль или несколько spawn-объектов. |
-| `Tilemap is not loaded` | Нет JSON в `public/assets/maps/` или неверный `levelId`. |
+| `Tilemap is not loaded` | Нет JSON в `public/assets/maps/` или неверный `levelId`. Локально: `npm run assets:pull`. |
 | `Failed to bind tilesets` | В JSON другое `name` тайлсета (не `platformer` / `beast_soldier`). |
 | Игрок падает сквозь пол | Тайлы без `solid: true` или пол нарисован только на `decor`. |
 | Враг не того типа | Неверное значение `enemyType` → fallback на `grunt` с warning в консоли. |
-| Изменения в Tiled не видны в игре | Забыли экспорт JSON; нужен re-export в `public/assets/maps/`. |
+| Изменения в Tiled не видны в игре | Забыли экспорт JSON; нужен re-export в `public/assets/maps/`. В проде ещё `npm run assets:push` (или UI), иначе бакет старый. |
 
 ---
 

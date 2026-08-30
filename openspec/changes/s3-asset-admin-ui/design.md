@@ -69,10 +69,9 @@ S3-ключи пода — существующий `platformer-minio`. Для p
 2. Jenkins credential для HTTP BasicAuth; манифесты + bootstrap.
 3. Build Now bootstrap; под Ready, Ingress host в списке.
 4. Браузер: BasicAuth → s3manager → загрузка в `platformer-assets` / `assets/...`.
-5. Проверка объекта (через туннель S3 или `/media`, когда роут живой).
+5. Проверка объекта: `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` и тело — Tiled JSON, не HTML.
 6. Rollback: `kubectl delete` Ingress/Deployment s3manager; MinIO и `/media` не трогать.
 
 ## Open Questions
 
-- Пин конкретного тега `cloudlena/s3manager` — снять с Docker Hub / GHCR на apply.
-- Выделенный MinIO IAM-user vs root в env пода — можно отдельным follow-up.
+- Выделенный MinIO IAM-user vs root в env пода — можно отдельным follow-up. Тег образа зафиксирован: `cloudlena/s3manager:v0.8.0`.
