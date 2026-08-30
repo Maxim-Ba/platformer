@@ -128,6 +128,7 @@ describe('nginx SPA without packing maps (task 5.2)', () => {
     expect(nginx).toMatch(/try_files \$uri \$uri\/ \/index\.html/);
     expect(nginx).toMatch(/location \/assets\//);
     expect(nginx).toMatch(/index-\*\.js/);
+    expect(nginx).toMatch(/location \^~ \/media\//);
     expect(CANONICAL_RUNTIME_MAP_URL).toBe('/media/assets/maps/level-01.json');
 
     const dockerfile = dropFullLineComments(readRepoFile('Dockerfile'), '#');

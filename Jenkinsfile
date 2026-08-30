@@ -94,6 +94,8 @@ pipeline {
       steps {
         withKubeConfig([credentialsId: 'kubeconfig']) {
           sh """
+            kubectl apply -f k8s/minio/middleware.yaml
+            kubectl apply -f k8s/ingress/ingress.yaml
             kubectl set image deployment/${DEPLOY} \
               ${DEPLOY}=${IMAGE}:${GIT_COMMIT} \
               -n ${NS}
@@ -111,6 +113,14 @@ pipeline {
         // Returns: HTTP 200 from `curl -sfI ${SITE_URL}/media/assets/maps/level-01.json`
         //       in addition to the homepage GET above. Non-200 fails the pipeline.
         sh 'curl -sfI ${SITE_URL}/media/assets/maps/level-01.json -o /dev/null'
+        // SPA fallback on `/media` is HTTP 200 text/html — curl -sfI would pass.
+        // Body must be Tiled JSON from MinIO, not frontend index.html.
+        sh '''
+          set -eu
+          body=$(curl -sf "${SITE_URL}/media/assets/maps/level-01.json")
+          printf '%s' "$body" | grep -qi '<!doctype html' && exit 1
+          printf '%s' "$body" | grep -q '"tilesets"'
+        '''
       }
     }
   }

@@ -7,6 +7,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
     traefik.ingress.kubernetes.io/router.tls.certresolver: le
     traefik.ingress.kubernetes.io/router.middlewares: platformer-platformer-minio-media@kubernetescrd
+    # Longer PathPrefix(`/media`) should already win over `/`; keep an explicit
+    # priority so a broken merge cannot send /media to the frontend SPA.
+    traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
   tls:
     - hosts:

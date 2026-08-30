@@ -493,6 +493,8 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
 
       const deployBody = extractStageBody(jenkinsExec, 'Deploy');
       const deployShell = extractShScripts(deployBody).join('\n');
+      expect(deployShell).toMatch(/kubectl apply -f k8s\/minio\/middleware.yaml/);
+      expect(deployShell).toMatch(/kubectl apply -f k8s\/ingress\/ingress.yaml/);
       expect(deployShell).toMatch(/kubectl\s+set\s+image\b/);
       expect(deployShell).toMatch(/rollout\s+status/);
     });
@@ -511,6 +513,11 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
         expect(shell).toMatch(
           /\$\{SITE_URL\}\/media\/assets\/maps\/level-01\.json|\$SITE_URL\/media\/assets\/maps\/level-01\.json/,
         );
+      });
+
+      it('fails Verify when /media map body is SPA HTML, not only when status is non-200', () => {
+        expect(shell).toMatch(/<!doctype html/);
+        expect(shell).toMatch(/["']tilesets["']/);
       });
     });
   });

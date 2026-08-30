@@ -420,6 +420,31 @@ describe('MinIO Kubernetes manifests (slice A: tasks 1.1–1.4, 2.1–2.3)', () 
       expect(combined).not.toMatch(/unimplemented/i);
     });
 
+    it('uses one Traefik type per Middleware and chains strip then add', () => {
+      const raw = readRepoFile(MIDDLEWARE);
+      const named = yamlDocuments(raw).filter((doc) => yamlKind(doc) === 'Middleware');
+      const typeKeys = ['stripPrefix', 'addPrefix', 'chain', 'basicAuth', 'replacePathRegex'] as const;
+
+      for (const doc of named) {
+        const spec = yamlBlock(doc, 'spec') ?? '';
+        const hits = typeKeys.filter((key) => new RegExp(`^\\s*${key}:`, 'm').test(spec));
+        expect(hits, `${metadataName(doc)} must declare exactly one middleware type`).toHaveLength(1);
+      }
+
+      const chainHead = named.find((doc) => metadataName(doc) === 'platformer-minio-media') ?? '';
+      const strip = named.find((doc) => metadataName(doc) === 'platformer-minio-media-strip') ?? '';
+      const add = named.find((doc) => metadataName(doc) === 'platformer-minio-media-add') ?? '';
+
+      expect(chainHead).toMatch(/chain:/);
+      expect(strip).toMatch(/stripPrefix:/);
+      expect(add).toMatch(/addPrefix:/);
+
+      const stripPos = chainHead.indexOf('platformer-minio-media-strip');
+      const addPos = chainHead.indexOf('platformer-minio-media-add');
+      expect(stripPos).toBeGreaterThan(-1);
+      expect(addPos).toBeGreaterThan(stripPos);
+    });
+
     it('wires the middleware to Prefix /media only, not to /', () => {
       const ingressDocs = allK8sDocuments().filter((entry) => ingressLike(entry.doc));
 
