@@ -22,12 +22,14 @@ ARCHETYPES: list[tuple[str, ArchetypeAnims]] = [
         [
             ('idle', 8, 'enemy-grunt-idle.png'),
             ('walk', 8, 'enemy-grunt-walk.png'),
+            ('hurt', 8, 'enemy-grunt-hurt.png'),
         ],
     ),
     (
         'flyer',
         [
             ('fly', 8, 'enemy-flyer-fly.png'),
+            ('hurt', 8, 'enemy-flyer-hurt.png'),
         ],
     ),
     (
@@ -35,6 +37,7 @@ ARCHETYPES: list[tuple[str, ArchetypeAnims]] = [
         [
             ('idle', 8, 'enemy-caster-idle.png'),
             ('attack', 8, 'enemy-caster-attack.png'),
+            ('hurt', 8, 'enemy-caster-hurt.png'),
         ],
     ),
 ]

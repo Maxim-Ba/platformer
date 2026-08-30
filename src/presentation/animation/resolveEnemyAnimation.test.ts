@@ -55,6 +55,24 @@ describe('resolveEnemyAnimation', () => {
     expect(resolveEnemyAnimation(flyer, ENEMY_ARCHETYPES.flyer)).toBe('fly');
   });
 
+  it('returns hurt over walk, fly, and idle when hurt is active', () => {
+    const grunt = createEnemyFromSpawn({
+      kind: 'enemy_spawn',
+      id: 'grunt-1',
+      position: new Vector2(200, 300),
+      enemyType: 'grunt',
+    });
+    const flyer = createEnemyFromSpawn({
+      kind: 'enemy_spawn',
+      id: 'flyer-1',
+      position: new Vector2(200, 300),
+      enemyType: 'flyer',
+    });
+
+    expect(resolveEnemyAnimation(grunt, ENEMY_ARCHETYPES.grunt, { isHurt: true })).toBe('hurt');
+    expect(resolveEnemyAnimation(flyer, ENEMY_ARCHETYPES.flyer, { isHurt: true })).toBe('hurt');
+  });
+
   it('returns idle for a grunt with zero patrol distance', () => {
     const grunt = createEnemyFromSpawn({
       kind: 'enemy_spawn',

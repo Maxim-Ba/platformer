@@ -116,6 +116,65 @@
       "label": "platformer-projectile-caster",
       "role": "projectile",
       "local_path": "public/assets/sprite/projectile-caster.png"
+    },
+    {
+      "asset_id": "62de9822-714b-42f3-93cd-45b31ef2a23a",
+      "label": "platformer-player-hurt",
+      "role": "animation_hurt",
+      "local_path": "public/assets/sprite/player-hurt.png"
+    },
+    {
+      "asset_id": "13b0e414-aef6-4fcd-82c4-45a52adc8b33",
+      "label": "platformer-enemy-grunt-hurt",
+      "role": "animation_hurt",
+      "local_path": "public/assets/sprite/enemy-grunt-hurt.png"
+    },
+    {
+      "asset_id": "bb074ba9-2fd5-4841-a771-962b20049877",
+      "label": "platformer-enemy-flyer-hurt",
+      "role": "animation_hurt",
+      "local_path": "public/assets/sprite/enemy-flyer-hurt.png"
+    },
+    {
+      "asset_id": "71b20cdd-b306-4969-9ecf-4ffb57e84661",
+      "label": "platformer-enemy-caster-hurt",
+      "role": "animation_hurt",
+      "local_path": "public/assets/sprite/enemy-caster-hurt.png"
+    },
+    {
+      "asset_id": "bacd11c9-2fa0-4b74-8bff-fb2adbcee819",
+      "label": "platformer-vfx-melee-slash-still",
+      "role": "vfx_still"
+    },
+    {
+      "asset_id": "3025fd99-db61-4df1-9479-29c65ed700e7",
+      "label": "platformer-vfx-melee-slash",
+      "role": "vfx",
+      "local_path": "public/assets/sprite/vfx-melee-slash.png"
+    },
+    {
+      "asset_id": "a7dbfff9-90b8-443e-985c-28fff0640573",
+      "label": "platformer-prop-hazard",
+      "role": "prop",
+      "local_path": "public/assets/sprite/prop-hazard.png"
+    },
+    {
+      "asset_id": "48cffcf8-f007-4afb-a89b-e4d7d866d5de",
+      "label": "platformer-prop-checkpoint",
+      "role": "prop",
+      "local_path": "public/assets/sprite/prop-checkpoint.png"
+    },
+    {
+      "asset_id": "dd5e13be-d30e-4ad0-82ce-454bdc5c038b",
+      "label": "platformer-prop-door",
+      "role": "prop",
+      "local_path": "public/assets/sprite/prop-door.png"
+    },
+    {
+      "asset_id": "f09ef3d3-71fb-4239-8e92-7ef55b45b4c0",
+      "label": "platformer-prop-exit",
+      "role": "prop",
+      "local_path": "public/assets/sprite/prop-exit.png"
     }
   ],
   "animation_run_id": "06e4f223-3785-4e3c-a3c3-e167034061cb"

@@ -19,11 +19,11 @@
 
 ## 3. SpriteCook P1 generation
 
-- [ ] 3.1 Animate player `hurt` from player-base; save id
-- [ ] 3.2 Generate enemy `hurt` anims for grunt, flyer, caster; save ids
-- [ ] 3.3 Generate melee slash VFX still or short anim; save id
-- [ ] 3.4 Generate prop stills: hazard, checkpoint, door, exit; save ids
-- [ ] 3.5 Ask the user to download P1 PNGs into documented paths
+- [x] 3.1 Animate player `hurt` from player-base; save id
+- [x] 3.2 Generate enemy `hurt` anims for grunt, flyer, caster; save ids
+- [x] 3.3 Generate melee slash VFX still or short anim; save id
+- [x] 3.4 Generate prop stills: hazard, checkpoint, door, exit; save ids
+- [x] 3.5 Ask the user to download P1 PNGs into documented paths
 
 ## 4. Sheet builders and asset keys
 
@@ -51,14 +51,14 @@
 
 ## 7. Level props and melee VFX
 
-- [ ] 7.1 Replace hazard/checkpoint/door/exit rectangles in `GameScene.renderLevelObjects` with prop images sized to Tiled AABB
-- [ ] 7.2 Keep boundary-exit rectangles as debug overlays
-- [ ] 7.3 Replace melee hitbox white rectangle with slash VFX sprite; destroy when attack window ends
+- [x] 7.1 Replace hazard/checkpoint/door/exit rectangles in `GameScene.renderLevelObjects` with prop images sized to Tiled AABB
+- [x] 7.2 Keep boundary-exit rectangles as debug overlays
+- [x] 7.3 Replace melee hitbox white rectangle with slash VFX sprite; destroy when attack window ends
 
 ## 8. Quality gate
 
-- [ ] 8.1 Update `docs/SPRITE-GAPS.md` statuses: P0/P1 → `have` after files and wiring land
+- [x] 8.1 Update `docs/SPRITE-GAPS.md` statuses: P0/P1 → `have` after files and wiring land
 - [x] 8.2 `npm run lint` — zero errors
 - [x] 8.3 `npm test` — resolver tests pass
 - [x] 8.4 `npm run build` — zero errors
-- [ ] 8.5 Manual playtest: grunt/flyer/caster distinct sprites, projectile not a square, attack cycle, dash anim, props not colored boxes
+- [x] 8.5 Manual playtest: grunt/flyer/caster distinct sprites, projectile not a square, attack cycle, dash anim, props not colored boxes

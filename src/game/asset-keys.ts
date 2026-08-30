@@ -41,9 +41,12 @@ export const PlayerAnimKeys = {
 export const EnemyAnimKeys = {
   GruntIdle: 'enemy-grunt-idle',
   GruntWalk: 'enemy-grunt-walk',
+  GruntHurt: 'enemy-grunt-hurt',
   FlyerFly: 'enemy-flyer-fly',
+  FlyerHurt: 'enemy-flyer-hurt',
   CasterIdle: 'enemy-caster-idle',
   CasterAttack: 'enemy-caster-attack',
+  CasterHurt: 'enemy-caster-hurt',
 } as const;
 
 export const LEVEL_TILESET_PATH = 'assets/tilesets/platformer-tiles.png';
@@ -53,6 +56,8 @@ export const ENEMY_FLYER_SHEET_PATH = 'assets/images/enemy-flyer-sheet.png';
 export const ENEMY_CASTER_SHEET_PATH = 'assets/images/enemy-caster-sheet.png';
 export const PROJECTILE_CASTER_PATH = 'assets/sprite/projectile-caster.png';
 export const VFX_MELEE_SLASH_PATH = 'assets/sprite/vfx-melee-slash.png';
+export const VFX_MELEE_SLASH_FRAME_WIDTH = 128;
+export const VFX_MELEE_SLASH_FRAME_HEIGHT = 128;
 export const PROP_HAZARD_PATH = 'assets/sprite/prop-hazard.png';
 export const PROP_CHECKPOINT_PATH = 'assets/sprite/prop-checkpoint.png';
 export const PROP_DOOR_PATH = 'assets/sprite/prop-door.png';
@@ -83,14 +88,20 @@ export type GameCombatAssetDefinition =
       key:
         | typeof AssetKeys.EnemyGrunt
         | typeof AssetKeys.EnemyFlyer
-        | typeof AssetKeys.EnemyCaster;
+        | typeof AssetKeys.EnemyCaster
+        | typeof AssetKeys.VfxMeleeSlash;
       path: string;
       type: 'spritesheet';
       frameWidth: number;
       frameHeight: number;
     }
   | {
-      key: typeof AssetKeys.ProjectileCaster;
+      key:
+        | typeof AssetKeys.ProjectileCaster
+        | typeof AssetKeys.PropHazard
+        | typeof AssetKeys.PropCheckpoint
+        | typeof AssetKeys.PropDoor
+        | typeof AssetKeys.PropExit;
       path: string;
       type: 'image';
     };
@@ -135,4 +146,15 @@ export const GAME_COMBAT_ASSETS: readonly GameCombatAssetDefinition[] = [
     path: PROJECTILE_CASTER_PATH,
     type: 'image',
   },
+  {
+    key: AssetKeys.VfxMeleeSlash,
+    path: VFX_MELEE_SLASH_PATH,
+    type: 'spritesheet',
+    frameWidth: VFX_MELEE_SLASH_FRAME_WIDTH,
+    frameHeight: VFX_MELEE_SLASH_FRAME_HEIGHT,
+  },
+  { key: AssetKeys.PropHazard, path: PROP_HAZARD_PATH, type: 'image' },
+  { key: AssetKeys.PropCheckpoint, path: PROP_CHECKPOINT_PATH, type: 'image' },
+  { key: AssetKeys.PropDoor, path: PROP_DOOR_PATH, type: 'image' },
+  { key: AssetKeys.PropExit, path: PROP_EXIT_PATH, type: 'image' },
 ] as const;

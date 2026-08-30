@@ -31,9 +31,14 @@ import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
 import { registerEnemyAnimations } from '@presentation/animation/EnemyAnimationRegistry';
+import {
+  registerMeleeSlashAnimation,
+  VFX_MELEE_SLASH_ANIM_KEY,
+} from '@presentation/animation/vfxSheetConfig';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import { EnemySprite } from '@presentation/entities/EnemySprite';
 import { ProjectileSprite } from '@presentation/entities/ProjectileSprite';
+import { containSize } from '@presentation/level/containSize';
 import { overlapsPlayerAabb } from '@presentation/level/LevelInteraction';
 import { createGameHud, type GameHud } from '@presentation/ui/hud/GameHud';
 import {
@@ -90,7 +95,7 @@ export class GameScene extends Phaser.Scene {
   private tilemap?: Phaser.Tilemaps.Tilemap;
   private groundLayer?: Phaser.Tilemaps.TilemapLayer;
   private decorLayer?: Phaser.Tilemaps.TilemapLayer;
-  private readonly levelObjectVisuals: Phaser.GameObjects.Rectangle[] = [];
+  private readonly levelObjectVisuals: Phaser.GameObjects.GameObject[] = [];
   private respawnPosition!: Vector2;
   private activatedCheckpointIds = new Set<string>();
   private readonly hotkeyCache = new Map<string, Phaser.Input.Keyboard.Key>();
@@ -107,7 +112,7 @@ export class GameScene extends Phaser.Scene {
   private facingDirection: -1 | 1 = 1;
   private enemySprites = new Map<string, EnemySprite>();
   private projectileSprites = new Map<string, ProjectileSprite>();
-  private attackHitboxFeedback?: Phaser.GameObjects.Rectangle;
+  private attackHitboxFeedback?: Phaser.GameObjects.Sprite;
   private readonly combatRules = new CombatRules();
 
   constructor() {
@@ -145,6 +150,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     registerEnemyAnimations(this);
+    registerMeleeSlashAnimation(this);
     this.resetSceneState();
     this.bindSceneInput();
     this.bindPauseResume();
@@ -588,7 +594,8 @@ export class GameScene extends Phaser.Scene {
       this.destroyEnemySprite(kill.enemyId);
     }
 
-    this.syncEnemySprites();
+    const hurtEnemyIds = new Set(attackResult.enemiesHit);
+    this.syncEnemySprites(hurtEnemyIds);
     this.updateAttackFeedback();
 
     const enemyUpdateResult = this.deps.updateEnemies.execute({
@@ -606,18 +613,21 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.syncEnemySprites();
+    this.syncEnemySprites(hurtEnemyIds);
     this.syncProjectileSprites();
   }
 
-  private syncEnemySprites(): void {
+  private syncEnemySprites(hurtEnemyIds: ReadonlySet<string> = new Set()): void {
     const projectileOwners = new Set(
       this.deps.enemyPort.getProjectiles().map((projectile) => projectile.ownerEnemyId),
     );
 
     for (const enemy of this.deps.enemyPort.getEnemies()) {
       const sprite = this.enemySprites.get(enemy.id);
-      const context = { hasActiveProjectile: projectileOwners.has(enemy.id) };
+      const context = {
+        hasActiveProjectile: projectileOwners.has(enemy.id),
+        isHurt: hurtEnemyIds.has(enemy.id),
+      };
 
       if (!sprite) {
         const created = EnemySprite.create(
@@ -675,38 +685,30 @@ export class GameScene extends Phaser.Scene {
     const attackState = this.deps.combatPort.getAttackState();
 
     if (!this.combatRules.isAttackActive(attackState)) {
-      this.playerSprite?.sprite.clearTint();
       this.destroyAttackFeedback();
       return;
     }
-
-    this.playerSprite?.sprite.setTint(0xffffff);
 
     const hitbox = this.combatRules.computeHitbox(
       this.playerState.position.x,
       this.playerState.position.y,
       attackState.facingDirection,
     );
+    const centerX = hitbox.x + hitbox.width / 2;
+    const centerY = hitbox.y + hitbox.height / 2;
 
     if (!this.attackHitboxFeedback) {
       this.attackHitboxFeedback = this.add
-        .rectangle(
-          hitbox.x + hitbox.width / 2,
-          hitbox.y + hitbox.height / 2,
-          hitbox.width,
-          hitbox.height,
-          0xffffff,
-          0.35,
-        )
+        .sprite(centerX, centerY, AssetKeys.VfxMeleeSlash)
         .setDepth(4);
+      this.attackHitboxFeedback.play(VFX_MELEE_SLASH_ANIM_KEY, true);
     } else {
-      this.attackHitboxFeedback.setPosition(
-        hitbox.x + hitbox.width / 2,
-        hitbox.y + hitbox.height / 2,
-      );
-      this.attackHitboxFeedback.setSize(hitbox.width, hitbox.height);
-      this.attackHitboxFeedback.setVisible(true);
+      this.attackHitboxFeedback.setPosition(centerX, centerY);
     }
+
+    this.attackHitboxFeedback.setDisplaySize(hitbox.width, hitbox.height);
+    this.attackHitboxFeedback.setFlipX(attackState.facingDirection < 0);
+    this.attackHitboxFeedback.setVisible(true);
   }
 
   private destroyEnemySprite(enemyId: string): void {
@@ -736,62 +738,46 @@ export class GameScene extends Phaser.Scene {
 
   private renderLevelObjects(): void {
     for (const hazard of this.level.hazards) {
-      this.levelObjectVisuals.push(
-        this.add
-          .rectangle(
-            hazard.position.x + hazard.width / 2,
-            hazard.position.y + hazard.height / 2,
-            hazard.width,
-            hazard.height,
-            0xef4444,
-            0.65,
-          )
-          .setDepth(2),
+      this.addLevelProp(
+        AssetKeys.PropHazard,
+        hazard.position.x + hazard.width / 2,
+        hazard.position.y + hazard.height / 2,
+        hazard.width,
+        hazard.height,
+        'fill',
       );
     }
 
     for (const checkpoint of this.level.checkpoints) {
-      this.levelObjectVisuals.push(
-        this.add
-          .rectangle(
-            checkpoint.position.x + checkpoint.width / 2,
-            checkpoint.position.y + checkpoint.height / 2,
-            checkpoint.width,
-            checkpoint.height,
-            0xfacc15,
-            0.65,
-          )
-          .setDepth(2),
+      this.addLevelProp(
+        AssetKeys.PropCheckpoint,
+        checkpoint.position.x + checkpoint.width / 2,
+        checkpoint.position.y + checkpoint.height / 2,
+        checkpoint.width,
+        checkpoint.height,
+        'contain',
       );
     }
 
     for (const exit of this.level.exits) {
-      this.levelObjectVisuals.push(
-        this.add
-          .rectangle(
-            exit.position.x + exit.width / 2,
-            exit.position.y + exit.height / 2,
-            exit.width,
-            exit.height,
-            0x22c55e,
-            0.65,
-          )
-          .setDepth(2),
+      this.addLevelProp(
+        AssetKeys.PropExit,
+        exit.position.x + exit.width / 2,
+        exit.position.y + exit.height / 2,
+        exit.width,
+        exit.height,
+        'contain',
       );
     }
 
     for (const door of this.level.doors) {
-      this.levelObjectVisuals.push(
-        this.add
-          .rectangle(
-            door.bounds.x + door.bounds.width / 2,
-            door.bounds.y + door.bounds.height / 2,
-            door.bounds.width,
-            door.bounds.height,
-            0x38bdf8,
-            0.65,
-          )
-          .setDepth(2),
+      this.addLevelProp(
+        AssetKeys.PropDoor,
+        door.bounds.x + door.bounds.width / 2,
+        door.bounds.y + door.bounds.height / 2,
+        door.bounds.width,
+        door.bounds.height,
+        'contain',
       );
     }
 
@@ -809,6 +795,26 @@ export class GameScene extends Phaser.Scene {
           .setDepth(2),
       );
     }
+  }
+
+  private addLevelProp(
+    textureKey: string,
+    centerX: number,
+    centerY: number,
+    boxWidth: number,
+    boxHeight: number,
+    fit: 'fill' | 'contain',
+  ): void {
+    const image = this.add.image(centerX, centerY, textureKey).setDepth(2);
+
+    if (fit === 'fill') {
+      image.setDisplaySize(boxWidth, boxHeight);
+    } else {
+      const size = containSize(image.width, image.height, boxWidth, boxHeight);
+      image.setDisplaySize(size.width, size.height);
+    }
+
+    this.levelObjectVisuals.push(image);
   }
 
   private clearLevelObjectVisuals(): void {

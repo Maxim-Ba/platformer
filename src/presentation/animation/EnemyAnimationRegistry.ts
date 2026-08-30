@@ -21,7 +21,7 @@ function createFrameRange(
 export function registerEnemyAnimations(scene: Phaser.Scene): void {
   const definitions: Array<{
     textureKey: string;
-    animationKey: 'idle' | 'walk' | 'fly' | 'attack';
+    animationKey: 'idle' | 'walk' | 'fly' | 'attack' | 'hurt';
     start: number;
     end: number;
     frameRate: number;
@@ -60,6 +60,27 @@ export function registerEnemyAnimations(scene: Phaser.Scene): void {
       animationKey: 'attack',
       ...ENEMY_ANIM_FRAME_RANGES.caster.attack,
       frameRate: 10,
+      repeat: 0,
+    },
+    {
+      textureKey: AssetKeys.EnemyGrunt,
+      animationKey: 'hurt',
+      ...ENEMY_ANIM_FRAME_RANGES.grunt.hurt,
+      frameRate: 12,
+      repeat: 0,
+    },
+    {
+      textureKey: AssetKeys.EnemyFlyer,
+      animationKey: 'hurt',
+      ...ENEMY_ANIM_FRAME_RANGES.flyer.hurt,
+      frameRate: 12,
+      repeat: 0,
+    },
+    {
+      textureKey: AssetKeys.EnemyCaster,
+      animationKey: 'hurt',
+      ...ENEMY_ANIM_FRAME_RANGES.caster.hurt,
+      frameRate: 12,
       repeat: 0,
     },
   ];

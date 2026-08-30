@@ -18,19 +18,19 @@
 | Player fall | SpriteCook strip + sheet | — (shipped) | — | have |
 | Player attack | SpriteCook 8-frame strip on player-sheet | `animate_game_art` from player-base | P0 | have |
 | Player dash | SpriteCook 6-frame strip on player-sheet | `animate_game_art` from player-base | P0 | have |
-| Player hurt | fade / invuln, no anim | `animate_game_art` from player-base | P1 | generate |
+| Player hurt | SpriteCook 4-frame strip on player-sheet | `animate_game_art` from player-base | P1 | have |
 | Player death | instant remove | — | P2 | deferred |
-| Enemy grunt | SpriteCook idle/walk sheet (`enemy-grunt`) | `generate_character` + `idle`/`walk` (platformer) | P0 | have |
-| Enemy flyer | SpriteCook fly sheet (`enemy-flyer`) | `generate_character` + fly/walk loop | P0 | have |
-| Enemy caster | SpriteCook idle/attack sheet (`enemy-caster`) | `generate_character` + `idle`/`attack` | P0 | have |
-| Enemy hurt (grunt/flyer/caster) | none | character preset `hurt` | P1 | generate |
+| Enemy grunt | SpriteCook idle/walk/hurt sheet (`enemy-grunt`) | `generate_character` + `idle`/`walk` (platformer) | P0 | have |
+| Enemy flyer | SpriteCook fly/hurt sheet (`enemy-flyer`) | `generate_character` + fly/walk loop | P0 | have |
+| Enemy caster | SpriteCook idle/attack/hurt sheet (`enemy-caster`) | `generate_character` + `idle`/`attack` | P0 | have |
+| Enemy hurt (grunt/flyer/caster) | SpriteCook hurt strips on enemy sheets | character preset `hurt` | P1 | have |
 | Enemy death | instant remove | — | P2 | deferred |
 | Caster projectile | SpriteCook still (`projectile-caster`) | `generate_game_art` (+ optional short loop) | P0 | have |
-| Melee slash VFX | white rectangle `alpha 0.35` | `generate_game_art` + short anim | P1 | generate |
-| Prop hazard | red rectangle in `renderLevelObjects` | `generate_game_art` still | P1 | generate |
-| Prop checkpoint | yellow rectangle | `generate_game_art` still | P1 | generate |
-| Prop door | cyan rectangle | `generate_game_art` still | P1 | generate |
-| Prop exit | green rectangle | `generate_game_art` still | P1 | generate |
+| Melee slash VFX | SpriteCook 4-frame slash overlay | `generate_game_art` + short anim | P1 | have |
+| Prop hazard | SpriteCook still (`prop-hazard`) | `generate_game_art` still | P1 | have |
+| Prop checkpoint | SpriteCook still (`prop-checkpoint`) | `generate_game_art` still | P1 | have |
+| Prop door | SpriteCook still (`prop-door`) | `generate_game_art` still | P1 | have |
+| Prop exit | SpriteCook still (`prop-exit`) | `generate_game_art` still | P1 | have |
 | Boundary exit | purple debug overlay | none (stay debug rectangle) | — | deferred |
 | HUD icons | text / UI rects | UI kit (out of scope) | — | deferred |
 | Skill-node icons | UI | UI kit (out of scope) | — | deferred |
