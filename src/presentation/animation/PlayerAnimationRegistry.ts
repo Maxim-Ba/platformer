@@ -7,7 +7,9 @@ import { PLAYER_ANIM_FRAME_RANGES } from './playerSheetConfig';
 export {
   PLAYER_ANIM_FRAME_RANGES,
   PLAYER_ATTACK_FRAME_COUNT,
+  PLAYER_DASH_FRAME_COUNT,
   PLAYER_FALL_FRAME_COUNT,
+  PLAYER_HURT_FRAME_COUNT,
   PLAYER_IDLE_FRAME_COUNT,
   PLAYER_JUMP_FRAME_COUNT,
   PLAYER_RUN_FRAME_COUNT,
@@ -72,6 +74,18 @@ export function registerPlayerAnimations(
     {
       key: PlayerAnimKeys.Attack,
       ...PLAYER_ANIM_FRAME_RANGES.attack,
+      frameRate: 48,
+      repeat: 0,
+    },
+    {
+      key: PlayerAnimKeys.Dash,
+      ...PLAYER_ANIM_FRAME_RANGES.dash,
+      frameRate: 30,
+      repeat: 0,
+    },
+    {
+      key: PlayerAnimKeys.Hurt,
+      ...PLAYER_ANIM_FRAME_RANGES.hurt,
       frameRate: 12,
       repeat: 0,
     },

@@ -1,7 +1,9 @@
-export type PlayerAnimationKey = 'idle' | 'run' | 'jump' | 'fall' | 'attack';
+export type PlayerAnimationKey = 'idle' | 'run' | 'jump' | 'fall' | 'attack' | 'dash' | 'hurt';
 
 export interface AnimationResolveContext {
   isAttacking?: boolean;
+  isDashing?: boolean;
+  isHurt?: boolean;
   runSpeedThreshold?: number;
 }
 
@@ -14,8 +16,16 @@ export function resolvePlayerAnimation(
   },
   context?: AnimationResolveContext,
 ): PlayerAnimationKey {
+  if (context?.isHurt) {
+    return 'hurt';
+  }
+
   if (context?.isAttacking) {
     return 'attack';
+  }
+
+  if (context?.isDashing) {
+    return 'dash';
   }
 
   if (!state.isGrounded) {

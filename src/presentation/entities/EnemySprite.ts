@@ -3,30 +3,26 @@ import { resolveArchetype } from '@domain/constants/enemies';
 import type { EnemyState } from '@domain/entities/EnemyState';
 import Phaser from 'phaser';
 
-const ARCHETYPE_COLORS: Record<EnemyTypeId, number> = {
-  grunt: 0xdc2626,
-  flyer: 0x2563eb,
-  caster: 0x9333ea,
-};
+import {
+  type EnemyAnimationResolveContext,
+  resolveEnemyAnimation,
+  toEnemyPhaserAnimKey,
+} from '@presentation/animation/resolveEnemyAnimation';
 
 export class EnemySprite {
-  readonly sprite: Phaser.GameObjects.Rectangle;
+  readonly sprite: Phaser.GameObjects.Sprite;
+  private currentAnim: string | null = null;
 
   private constructor(
     scene: Phaser.Scene,
-    archetypeId: EnemyTypeId,
+    private readonly archetypeId: EnemyTypeId,
     x: number,
     y: number,
   ) {
     const archetype = resolveArchetype(archetypeId);
-    this.sprite = scene.add.rectangle(
-      x,
-      y,
-      archetype.width,
-      archetype.height,
-      ARCHETYPE_COLORS[archetype.id],
-    );
+    this.sprite = scene.add.sprite(x, y, archetype.spriteKey);
     this.sprite.setOrigin(0.5, 1);
+    this.sprite.setDisplaySize(archetype.width, archetype.height);
     this.sprite.setDepth(3);
   }
 
@@ -39,9 +35,20 @@ export class EnemySprite {
     return new EnemySprite(scene, archetypeId, x, y);
   }
 
-  syncFromState(state: EnemyState): void {
+  syncFromState(state: EnemyState, context?: EnemyAnimationResolveContext): void {
+    const archetype = resolveArchetype(this.archetypeId);
     this.sprite.setPosition(Math.round(state.position.x), Math.round(state.position.y));
-    this.sprite.setScale(state.patrolDirection < 0 ? -1 : 1, 1);
+    this.sprite.setFlipX(state.patrolDirection < 0);
+
+    const animationKey = resolveEnemyAnimation(state, archetype, context);
+    const phaserAnimKey = toEnemyPhaserAnimKey(archetype.spriteKey, animationKey);
+
+    if (this.currentAnim !== phaserAnimKey) {
+      this.sprite.play(phaserAnimKey, true);
+      this.currentAnim = phaserAnimKey;
+    }
+
+    this.sprite.setDisplaySize(archetype.width, archetype.height);
   }
 
   destroy(): void {

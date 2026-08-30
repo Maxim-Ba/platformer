@@ -11,7 +11,12 @@ import { PlayerState } from '@domain/value-objects/PlayerState';
 import { Vector2 } from '@domain/value-objects/Vector2';
 import { Velocity } from '@domain/value-objects/Velocity';
 import type { InputActionId } from '@domain/types/InputActionId';
-import { AssetKeys, BEAST_SOLDIER_TILESET_PATH, LEVEL_TILESET_PATH } from '@game/asset-keys';
+import {
+  AssetKeys,
+  BEAST_SOLDIER_TILESET_PATH,
+  GAME_COMBAT_ASSETS,
+  LEVEL_TILESET_PATH,
+} from '@game/asset-keys';
 import { assetUrl } from '@game/assetUrl';
 import {
   CHARACTER_MENU_TABS,
@@ -25,6 +30,7 @@ import type { SceneDependencies } from '@game/composition-root';
 import { getAppDependenciesFromRegistry } from '@game/scene-context';
 import { SceneKeys } from '@game/scene-keys';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
+import { registerEnemyAnimations } from '@presentation/animation/EnemyAnimationRegistry';
 import { PlayerSprite } from '@presentation/entities/PlayerSprite';
 import { EnemySprite } from '@presentation/entities/EnemySprite';
 import { ProjectileSprite } from '@presentation/entities/ProjectileSprite';
@@ -123,9 +129,22 @@ export class GameScene extends Phaser.Scene {
     );
     this.load.image(AssetKeys.Tileset, assetUrl(LEVEL_TILESET_PATH));
     this.load.image(AssetKeys.BeastSoldierTileset, assetUrl(BEAST_SOLDIER_TILESET_PATH));
+
+    for (const asset of GAME_COMBAT_ASSETS) {
+      const url = assetUrl(asset.path);
+      if (asset.type === 'spritesheet') {
+        this.load.spritesheet(asset.key, url, {
+          frameWidth: asset.frameWidth,
+          frameHeight: asset.frameHeight,
+        });
+      } else {
+        this.load.image(asset.key, url);
+      }
+    }
   }
 
   create(): void {
+    registerEnemyAnimations(this);
     this.resetSceneState();
     this.bindSceneInput();
     this.bindPauseResume();
@@ -208,6 +227,8 @@ export class GameScene extends Phaser.Scene {
     const attackState = this.deps.combatPort.getAttackState();
     this.playerSprite.syncFromState(this.playerState, {
       isAttacking: this.combatRules.isAttackActive(attackState),
+      isDashing: dashState.isDashing,
+      isHurt: this.deps.healthPort.isInvulnerable() && !dashState.isDashing,
     });
     this.playerSprite.setDashing(dashState.isDashing);
     this.deps.physicsPort.syncFromDomain(PLAYER_ENTITY_ID, this.playerState);
@@ -590,8 +611,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private syncEnemySprites(): void {
+    const projectileOwners = new Set(
+      this.deps.enemyPort.getProjectiles().map((projectile) => projectile.ownerEnemyId),
+    );
+
     for (const enemy of this.deps.enemyPort.getEnemies()) {
       const sprite = this.enemySprites.get(enemy.id);
+      const context = { hasActiveProjectile: projectileOwners.has(enemy.id) };
 
       if (!sprite) {
         const created = EnemySprite.create(
@@ -601,11 +627,11 @@ export class GameScene extends Phaser.Scene {
           enemy.position.y,
         );
         this.enemySprites.set(enemy.id, created);
-        created.syncFromState(enemy);
+        created.syncFromState(enemy, context);
         continue;
       }
 
-      sprite.syncFromState(enemy);
+      sprite.syncFromState(enemy, context);
     }
   }
 

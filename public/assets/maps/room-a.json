@@ -201,6 +201,12 @@
         0,
         0,
         0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
         0,
         0,
         0,
@@ -219,18 +225,12 @@
         0,
         0,
         0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
         0,
         0,
         0,
@@ -298,13 +298,6 @@
       "id": 1,
       "name": "ground",
       "opacity": 1,
-      "properties": [
-        {
-          "name": "solid",
-          "type": "bool",
-          "value": false
-        }
-      ],
       "type": "tilelayer",
       "visible": true,
       "width": 24,
@@ -509,12 +502,6 @@
         0,
         0,
         0,
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
         0,
         0,
         0,
@@ -533,12 +520,18 @@
         0,
         0,
         0,
-        2,
-        2,
-        2,
-        2,
-        2,
-        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
         0,
         0,
@@ -732,6 +725,38 @@
               "value": "right"
             }
           ]
+        },
+        {
+          "height": 64,
+          "id": 10,
+          "name": "Door to D (enemy arena)",
+          "type": "door",
+          "visible": true,
+          "width": 32,
+          "x": 192,
+          "y": 256,
+          "properties": [
+            {
+              "name": "doorId",
+              "type": "string",
+              "value": "to-d"
+            },
+            {
+              "name": "targetRoom",
+              "type": "string",
+              "value": "room-d"
+            },
+            {
+              "name": "targetDoor",
+              "type": "string",
+              "value": "from-a"
+            },
+            {
+              "name": "facing",
+              "type": "string",
+              "value": "right"
+            }
+          ]
         }
       ],
       "opacity": 1,
@@ -742,7 +767,7 @@
     }
   ],
   "nextlayerid": 4,
-  "nextobjectid": 20,
+  "nextobjectid": 11,
   "orientation": "orthogonal",
   "renderorder": "right-down",
   "tiledversion": "1.12.2",

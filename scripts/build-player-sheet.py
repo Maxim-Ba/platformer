@@ -19,7 +19,9 @@ ANIMATIONS: list[tuple[str, int, str | None, list[int] | None]] = [
     ('run', 6, 'player-run.png', None),
     ('jump', 1, 'player-jump.png', [3]),
     ('fall', 1, 'player-fall.png', [2]),
-    ('attack', 2, 'player-attack.png', [2, 3]),
+    ('attack', 8, 'player-attack.png', None),
+    ('dash', 6, 'player-dash.png', None),
+    ('hurt', 4, 'player-hurt.png', None),
 ]
 
 

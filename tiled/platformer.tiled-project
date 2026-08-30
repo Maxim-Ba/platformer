@@ -54,6 +54,14 @@
             "name": "boundary_exit",
             "type": "object",
             "useAs": "object"
+        },
+        {
+            "color": "#ff8855",
+            "drawFill": true,
+            "id": 7,
+            "name": "enemy_spawn",
+            "type": "object",
+            "useAs": "object"
         }
     ],
     "propertyTypes": [],

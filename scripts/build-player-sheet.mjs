@@ -14,11 +14,16 @@ const ANIMATIONS = [
   { name: 'run', count: 6, file: 'player-run.png', indices: null },
   { name: 'jump', count: 1, file: 'player-jump.png', indices: [3] },
   { name: 'fall', count: 1, file: 'player-fall.png', indices: [2] },
-  { name: 'attack', count: 2, file: 'player-attack.png', indices: [2, 3] },
+  { name: 'attack', count: 8, file: 'player-attack.png', indices: null },
+  { name: 'dash', count: 6, file: 'player-dash.png', indices: null },
+  { name: 'hurt', count: 4, file: 'player-hurt.png', indices: null },
 ];
 
 async function loadFrames(file, count, indices) {
-  const filePath = path.join(SPRITE_DIR, file);
+  const requestedPath = path.join(SPRITE_DIR, file);
+  const filePath = fs.existsSync(requestedPath)
+    ? requestedPath
+    : path.join(SPRITE_DIR, 'player-idle.png');
   const meta = await sharp(filePath).metadata();
   const frameCount = Math.max(1, Math.floor(meta.width / meta.height));
   const frameW = Math.floor(meta.width / frameCount);

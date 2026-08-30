@@ -50,13 +50,14 @@ pipeline {
     stage('Assert World Graph Maps') {
       steps {
         // Args: WORLD_GRAPH room ids from src/game/world-graph.ts (room-a, room-b,
-        //       room-c) — shell/node check after pull; do not import TypeScript from Jenkins.
+        //       room-c, room-d) — shell/node check after pull; do not import TypeScript from Jenkins.
         // Returns: success only if `public/assets/maps/{id}.json` exists for each id;
         //       otherwise fail the pipeline (MUST NOT reach Push/Deploy).
         sh '''
           test -f public/assets/maps/room-a.json
           test -f public/assets/maps/room-b.json
           test -f public/assets/maps/room-c.json
+          test -f public/assets/maps/room-d.json
         '''
       }
     }

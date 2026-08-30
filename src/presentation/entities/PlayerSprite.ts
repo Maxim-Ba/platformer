@@ -1,5 +1,6 @@
 import type { PlayerState } from '@domain/value-objects/PlayerState';
 import type { ISettingsPort } from '@application/ports/ISettingsPort';
+import { PlayerAnimKeys } from '@game/asset-keys';
 import Phaser from 'phaser';
 
 import {
@@ -16,7 +17,7 @@ import {
 } from '@domain/constants/player';
 
 const DASH_TINT = 0x88ccff;
-const DASH_ALPHA = 0.6;
+const DASH_ALPHA = 0.85;
 
 export class PlayerSprite {
   readonly sprite: Phaser.GameObjects.Sprite;
@@ -52,6 +53,10 @@ export class PlayerSprite {
     if (isDashing) {
       this.sprite.setTint(DASH_TINT);
       this.sprite.setAlpha(DASH_ALPHA);
+      if (this.currentAnim !== PlayerAnimKeys.Dash) {
+        this.sprite.play(PlayerAnimKeys.Dash, true);
+        this.currentAnim = PlayerAnimKeys.Dash;
+      }
       return;
     }
 
@@ -73,11 +78,10 @@ export class PlayerSprite {
       this.sprite.setFlipX(false);
     }
 
-    if (this.isDashing) {
-      return;
-    }
-
-    const animationKey = resolvePlayerAnimation(state, context);
+    const animationKey = resolvePlayerAnimation(state, {
+      ...context,
+      isDashing: context?.isDashing ?? this.isDashing,
+    });
     const phaserAnimKey = toPhaserAnimKey(animationKey);
 
     if (this.currentAnim !== phaserAnimKey) {

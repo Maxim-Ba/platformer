@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="11">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="24" height="12" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="7">
  <editorsettings>
-  <export target="../public/assets/maps/room-a.json" format="json"/>
+  <export target="../public/assets/maps/room-d.json" format="json"/>
  </editorsettings>
  <tileset firstgid="1" name="platformer" tilewidth="32" tileheight="32" tilecount="2" columns="2">
   <image source="../public/assets/tilesets/platformer-tiles.png" width="64" height="32"/>
@@ -22,8 +22,8 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,2,2,2,0,0,0,2,2,2,0,0,0,2,2,2,0,
+0,0,0,0,0,0,0,0,2,2,2,0,0,0,2,2,2,0,0,0,2,2,2,0,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
 </data>
@@ -46,38 +46,30 @@
  </layer>
  <objectgroup id="3" name="objects">
   <object id="1" name="Player Spawn" type="player_spawn" x="96" y="288" width="32" height="32"/>
-  <object id="2" name="Boundary to B" type="boundary_exit" x="736" y="256" width="32" height="64">
+  <object id="2" name="Door from A" type="door" x="64" y="256" width="32" height="64">
    <properties>
-    <property name="exitId" type="string" value="to-b"/>
-    <property name="targetRoom" type="string" value="room-b"/>
-    <property name="targetExitId" type="string" value="from-a"/>
-    <property name="edge" type="string" value="right"/>
-    <property name="facing" type="string" value="left"/>
-   </properties>
-  </object>
-  <object id="3" name="Boundary to C" type="boundary_exit" x="352" y="320" width="64" height="64">
-   <properties>
-    <property name="exitId" type="string" value="to-c"/>
-    <property name="targetRoom" type="string" value="room-c"/>
-    <property name="targetExitId" type="string" value="from-a"/>
-    <property name="edge" type="string" value="bottom"/>
+    <property name="doorId" type="string" value="from-a"/>
+    <property name="targetRoom" type="string" value="room-a"/>
+    <property name="targetDoor" type="string" value="to-d"/>
     <property name="facing" type="string" value="right"/>
    </properties>
   </object>
-  <object id="4" name="Door to B (interior)" type="door" x="320" y="256" width="32" height="64">
+  <object id="3" name="Grunt Enemy" type="enemy_spawn" x="288" y="288" width="32" height="32">
    <properties>
-    <property name="doorId" type="string" value="interior-to-b"/>
-    <property name="targetRoom" type="string" value="room-b"/>
-    <property name="targetDoor" type="string" value="interior-from-a"/>
-    <property name="facing" type="string" value="right"/>
+    <property name="enemyType" type="string" value="grunt"/>
+    <property name="patrolDistance" type="int" value="80"/>
    </properties>
   </object>
-  <object id="10" name="Door to D (enemy arena)" type="door" x="192" y="256" width="32" height="64">
+  <object id="4" name="Flyer Enemy" type="enemy_spawn" x="432" y="128" width="24" height="24">
    <properties>
-    <property name="doorId" type="string" value="to-d"/>
-    <property name="targetRoom" type="string" value="room-d"/>
-    <property name="targetDoor" type="string" value="from-a"/>
-    <property name="facing" type="string" value="right"/>
+    <property name="enemyType" type="string" value="flyer"/>
+    <property name="patrolDistance" type="int" value="120"/>
+   </properties>
+  </object>
+  <object id="5" name="Caster Enemy" type="enemy_spawn" x="592" y="280" width="28" height="40">
+   <properties>
+    <property name="enemyType" type="string" value="caster"/>
+    <property name="patrolDistance" type="int" value="0"/>
    </properties>
   </object>
  </objectgroup>

@@ -238,15 +238,15 @@ Game → Level Complete (победа: выход level_exit)
 
 ### Mock room world playtest
 
-Change `interconnected-world` добавляет две связанные комнаты `room-a` ↔ `room-b` с переходом через объект Tiled `door` (без `LevelCompleteScene`).
+Change `interconnected-world` добавляет связанные комнаты `room-a` ↔ `room-b` / `room-c` и арену `room-d` (все типы врагов) с переходом через объект Tiled `door` (без `LevelCompleteScene`).
 
 | Флаг | Файл | Поведение |
 |------|------|-----------|
 | `WORLD_PLAYTEST_ENABLED` | `src/game/world-graph.ts` | `true` — «Новая игра» стартует в `room-a`; `false` — legacy `level-01` |
 
-Исходники: `tiled/room-a.tmx`, `tiled/room-b.tmx`. Экспорт: `public/assets/maps/room-a.json`, `room-b.json`.
+Исходники: `tiled/room-a.tmx` … `tiled/room-d.tmx`. Экспорт: `public/assets/maps/room-a.json` … `room-d.json`.
 
-Проверка: `npm run dev` → Новая игра → дойти до синей двери справа → `room-b` → дверь слева → обратно в `room-a`. Сохранение в паузе пишет `currentRoomId` в save.
+Проверка: `npm run dev` → Новая игра → дверь слева от спавна → `room-d` (grunt / flyer / caster). Правая дверь / край — `room-b`, нижний край — `room-c`. Сохранение в паузе пишет `currentRoomId` в save.
 
 Чтобы вернуться к demo `level-01`, установите `WORLD_PLAYTEST_ENABLED = false` в `src/game/world-graph.ts`.
 

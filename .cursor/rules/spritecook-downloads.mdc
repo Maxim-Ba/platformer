@@ -12,12 +12,31 @@ alwaysApply: true
 1. Сообщи пользователю, что генерация завершена, и **попроси скачать spritesheet** (формат PNG, горизонтальная полоса кадров) из SpriteCook.
 2. Укажи точные пути для сохранения в репозитории:
 
-| Анимация | Файл |
+| Ассет | Файл |
 |----------|------|
+| idle | `public/assets/sprite/player-idle.png` |
 | run | `public/assets/sprite/player-run.png` |
 | jump | `public/assets/sprite/player-jump.png` |
 | fall | `public/assets/sprite/player-fall.png` |
 | attack | `public/assets/sprite/player-attack.png` |
+| dash | `public/assets/sprite/player-dash.png` |
+| hurt | `public/assets/sprite/player-hurt.png` |
+| grunt idle | `public/assets/sprite/enemy-grunt-idle.png` |
+| grunt walk | `public/assets/sprite/enemy-grunt-walk.png` |
+| grunt hurt | `public/assets/sprite/enemy-grunt-hurt.png` |
+| flyer fly/walk | `public/assets/sprite/enemy-flyer-fly.png` |
+| flyer hurt | `public/assets/sprite/enemy-flyer-hurt.png` |
+| caster idle | `public/assets/sprite/enemy-caster-idle.png` |
+| caster attack | `public/assets/sprite/enemy-caster-attack.png` |
+| caster hurt | `public/assets/sprite/enemy-caster-hurt.png` |
+| projectile | `public/assets/sprite/projectile-caster.png` |
+| slash VFX | `public/assets/sprite/vfx-melee-slash.png` |
+| hazard | `public/assets/sprite/prop-hazard.png` |
+| checkpoint | `public/assets/sprite/prop-checkpoint.png` |
+| door | `public/assets/sprite/prop-door.png` |
+| exit | `public/assets/sprite/prop-exit.png` |
+
+Собранные sheets (после `python3 scripts/build-*-sheet.py`): `public/assets/images/{player,enemy-grunt,enemy-flyer,enemy-caster}-sheet.png`.
 
 3. Запиши `asset_id` и signed URL в `spritecook-assets.json` (если ещё не записаны).
 4. После подтверждения пользователя, что файлы на месте:

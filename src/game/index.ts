@@ -1,4 +1,4 @@
-export { AssetKeys, FOUNDATION_ASSETS } from './asset-keys';
+export { AssetKeys, FOUNDATION_ASSETS, GAME_COMBAT_ASSETS } from './asset-keys';
 export { createGame, registerScenes } from './bootstrap';
 export { PLAYER_ENTITY_ID, DEFAULT_LEVEL_ID, REGISTRY_APP_DEPENDENCIES_KEY, LEVEL_PROGRESSION, getNextLevelId } from './constants';
 export {

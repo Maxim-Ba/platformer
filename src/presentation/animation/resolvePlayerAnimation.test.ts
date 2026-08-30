@@ -23,6 +23,38 @@ describe('resolvePlayerAnimation', () => {
     expect(resolvePlayerAnimation(state, { isAttacking: true })).toBe('attack');
   });
 
+  it('returns hurt over attack, dash, and movement', () => {
+    const state = createState(new Velocity(100, -200), false);
+
+    expect(
+      resolvePlayerAnimation(state, {
+        isHurt: true,
+        isAttacking: true,
+        isDashing: true,
+      }),
+    ).toBe('hurt');
+  });
+
+  it('returns dash over jump, fall, run, and idle when hurt and attack are inactive', () => {
+    expect(
+      resolvePlayerAnimation(createState(new Velocity(100, -200), false), { isDashing: true }),
+    ).toBe('dash');
+    expect(
+      resolvePlayerAnimation(createState(new Velocity(DEFAULT_RUN_SPEED_THRESHOLD, 0), true), {
+        isDashing: true,
+      }),
+    ).toBe('dash');
+    expect(
+      resolvePlayerAnimation(createState(new Velocity(0, 0), true), { isDashing: true }),
+    ).toBe('dash');
+  });
+
+  it('returns attack over dash when both are active', () => {
+    const state = createState(new Velocity(DEFAULT_RUN_SPEED_THRESHOLD, 0), true);
+
+    expect(resolvePlayerAnimation(state, { isAttacking: true, isDashing: true })).toBe('attack');
+  });
+
   it('returns jump when airborne with upward velocity', () => {
     const state = createState(new Velocity(0, -120), false);
 

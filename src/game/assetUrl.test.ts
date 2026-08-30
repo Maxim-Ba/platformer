@@ -4,13 +4,17 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ENEMY_ARCHETYPES } from '@domain/constants/enemies';
+
 import { TiledLevelRepository } from '@infrastructure/tiled/TiledLevelRepository';
 import type { TiledMapJson } from '@infrastructure/tiled/TiledTypes';
 
 import {
   BEAST_SOLDIER_TILESET_PATH,
   FOUNDATION_ASSETS,
+  GAME_COMBAT_ASSETS,
   LEVEL_TILESET_PATH,
+  AssetKeys,
 } from './asset-keys';
 import { assetUrl } from './assetUrl';
 import { DEFAULT_LEVEL_ID } from './constants';
@@ -140,6 +144,34 @@ describe('assetUrl', () => {
     });
   });
 
+  describe('GameScene combat asset composition', () => {
+    it('composes combat paths without /media/ when the base URL is empty', () => {
+      vi.stubEnv('VITE_ASSET_BASE_URL', '');
+
+      expect(GAME_COMBAT_ASSETS.length).toBeGreaterThan(0);
+      for (const asset of GAME_COMBAT_ASSETS) {
+        expect(assetUrl(asset.path)).toBe(asset.path);
+        expect(assetUrl(asset.path)).not.toMatch(/^\/media\//);
+      }
+    });
+
+    it('prefixes combat paths with /media/ in production', () => {
+      vi.stubEnv('VITE_ASSET_BASE_URL', '/media/');
+
+      for (const asset of GAME_COMBAT_ASSETS) {
+        expect(assetUrl(asset.path)).toBe(`/media/${asset.path}`);
+      }
+    });
+  });
+
+  describe('enemy sprite keys', () => {
+    it('matches archetype spriteKey values to loaded combat texture keys', () => {
+      expect(ENEMY_ARCHETYPES.grunt.spriteKey).toBe(AssetKeys.EnemyGrunt);
+      expect(ENEMY_ARCHETYPES.flyer.spriteKey).toBe(AssetKeys.EnemyFlyer);
+      expect(ENEMY_ARCHETYPES.caster.spriteKey).toBe(AssetKeys.EnemyCaster);
+    });
+  });
+
   describe('GameScene tileset and map composition', () => {
     it('composes map JSON and tileset paths without /media/ when the base URL is empty', () => {
       vi.stubEnv('VITE_ASSET_BASE_URL', '');
@@ -206,6 +238,8 @@ describe('assetUrl', () => {
       expect(source).toContain('assetUrl(`assets/maps/${roomId}.json`)');
       expect(source).toContain('assetUrl(LEVEL_TILESET_PATH)');
       expect(source).toContain('assetUrl(BEAST_SOLDIER_TILESET_PATH)');
+      expect(source).toContain('for (const asset of GAME_COMBAT_ASSETS)');
+      expect(source).toContain('assetUrl(asset.path)');
     });
 
     it('TiledLevelRepository.load fetches through assetUrl', () => {

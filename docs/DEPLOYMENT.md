@@ -216,7 +216,7 @@ curl -I https://platformer.balashov-maxim.ru
 | Stage | Действие |
 |---|---|
 | Pull Assets | `npm run assets:pull` в контейнере `node:20-alpine` против `https://minio-adminer.balashov-maxim.ru` (credential `s3manager-http`; агент без Node) |
-| Assert World Graph Maps | `test -f` карт `room-a/b/c` после pull |
+| Assert World Graph Maps | `test -f` карт `room-a/b/c/d` после pull |
 | Test | `docker build --target build` → `npm ci`, `lint`, `test`, `build` внутри образа (без bind-mount workspace) |
 | Build | `docker build` → `3224142123/platformer:$GIT_COMMIT` (nginx + `dist/`, слои Test переиспользуются из кэша) |
 | Push | push в Docker Hub (`latest` + commit tag) |

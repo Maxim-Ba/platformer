@@ -31,9 +31,91 @@
     },
     {
       "asset_id": "9345af40-1cba-4a74-8b4a-bfa812e68b53",
+      "label": "platformer-player-attack-previous",
+      "role": "animation_attack_previous"
+    },
+    {
+      "asset_id": "2da3847c-2892-4530-a388-800ac19819a1",
       "label": "platformer-player-attack",
       "role": "animation_attack",
       "local_path": "public/assets/sprite/player-attack.png"
+    },
+    {
+      "asset_id": "0aa4e44e-e270-42ff-b8b3-e01418424d00",
+      "label": "platformer-player-dash",
+      "role": "animation_dash",
+      "local_path": "public/assets/sprite/player-dash.png"
+    },
+    {
+      "asset_id": "1790ea17-92aa-46b1-9cfb-0b845428057b",
+      "label": "platformer-enemy-grunt-base-previous",
+      "role": "base_character_previous"
+    },
+    {
+      "asset_id": "c445fabe-b906-42dc-8c7c-4da8f7156dbb",
+      "label": "platformer-enemy-grunt-idle-previous",
+      "role": "animation_idle_previous"
+    },
+    {
+      "asset_id": "6f307876-6d8b-4267-859f-04c65a8bad2b",
+      "label": "platformer-enemy-grunt-walk-previous",
+      "role": "animation_walk_previous"
+    },
+    {
+      "asset_id": "d59f74f7-83a0-4d08-b6b3-829ee9280676",
+      "label": "platformer-enemy-grunt-base",
+      "role": "base_character"
+    },
+    {
+      "asset_id": "b0b32ee1-eb30-42dd-8548-eba75aa123b1",
+      "label": "platformer-enemy-grunt-idle",
+      "role": "animation_idle",
+      "local_path": "public/assets/sprite/enemy-grunt-idle.png"
+    },
+    {
+      "asset_id": "4d7b0b30-86de-4a82-a2cc-b918c96369bc",
+      "label": "platformer-enemy-grunt-walk",
+      "role": "animation_walk",
+      "local_path": "public/assets/sprite/enemy-grunt-walk.png"
+    },
+    {
+      "asset_id": "2513b45e-1a84-4e03-99c2-235b2a6ff475",
+      "label": "platformer-enemy-flyer-base",
+      "role": "base_character"
+    },
+    {
+      "asset_id": "04af9a2a-7ca5-4d5b-ad9a-34178671b6b7",
+      "label": "platformer-enemy-flyer-walk-previous",
+      "role": "animation_fly_previous"
+    },
+    {
+      "asset_id": "31de5aa7-743d-4980-8684-502d6365037b",
+      "label": "platformer-enemy-flyer-fly",
+      "role": "animation_fly",
+      "local_path": "public/assets/sprite/enemy-flyer-fly.png"
+    },
+    {
+      "asset_id": "d472d226-4c1c-4858-a9d7-b8ab6552c902",
+      "label": "platformer-enemy-caster-base",
+      "role": "base_character"
+    },
+    {
+      "asset_id": "bb9fcd81-5b9a-4acb-b94e-2dde7ec900ca",
+      "label": "platformer-enemy-caster-idle",
+      "role": "animation_idle",
+      "local_path": "public/assets/sprite/enemy-caster-idle.png"
+    },
+    {
+      "asset_id": "0688dc78-3286-4b11-a28c-fd68347093af",
+      "label": "platformer-enemy-caster-attack",
+      "role": "animation_attack",
+      "local_path": "public/assets/sprite/enemy-caster-attack.png"
+    },
+    {
+      "asset_id": "40e8cbe3-47ff-4806-83b6-2664e0a65108",
+      "label": "platformer-projectile-caster",
+      "role": "projectile",
+      "local_path": "public/assets/sprite/projectile-caster.png"
     }
   ],
   "animation_run_id": "06e4f223-3785-4e3c-a3c3-e167034061cb"

@@ -115,7 +115,7 @@ function parseObjectGroup(tmx) {
     objects.push(parseObject(empty[1] ?? ''));
     empty = emptyRe.exec(body);
   }
-  const fullRe = /<object\b([^>]*)>([\s\S]*?)<\/object>/g;
+  const fullRe = /<object\b((?:[^>/]|\/(?!>))*)>([\s\S]*?)<\/object>/g;
   let full = fullRe.exec(body);
   while (full) {
     objects.push(parseObject(full[1] ?? '', full[2] ?? ''));
