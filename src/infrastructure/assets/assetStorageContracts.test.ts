@@ -24,6 +24,7 @@ describe('npm assets:push / assets:pull (task 3.1)', () => {
     const pkg = JSON.parse(readRepoFile('package.json')) as {
       scripts?: Record<string, string>;
     };
+    expect(pkg.scripts?.['maps:export']).toMatch(/export-world-maps\.mjs/);
     expect(pkg.scripts?.['assets:push']).toMatch(/assets-sync\.mjs\s+push/);
     expect(pkg.scripts?.['assets:pull']).toMatch(/assets-sync\.mjs\s+pull/);
 

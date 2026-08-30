@@ -416,11 +416,19 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
         expect(body).toMatch(/credentialsId:\s*['"]s3manager-http['"]/);
         expect(body).toMatch(/\bsh\b/);
         expect(shell).toMatch(/docker/);
+        expect(shell).toMatch(/npm\s+run\s+maps:export/);
+        expect(shell).toMatch(/npm\s+run\s+assets:push/);
         expect(shell).toMatch(/npm\s+run\s+assets:pull/);
         expect(shell).toMatch(/minio-adminer\.balashov-maxim\.ru|S3MANAGER_URL/);
         expect(shell).toMatch(/public\/assets\//);
         expect(shell).not.toMatch(/\bmc\s+mirror\b/);
         expect(shell).not.toMatch(/^\s*npm\s+run\s+assets:pull\s*$/m);
+
+        const exportCmd = indexOfExecutable(shell, /npm\s+run\s+maps:export/, 'npm run maps:export');
+        const seedCmd = indexOfExecutable(shell, /npm\s+run\s+assets:push/, 'npm run assets:push');
+        const pullCmd = indexOfExecutable(shell, /npm\s+run\s+assets:pull/, 'npm run assets:pull');
+        expect(exportCmd).toBeLessThan(seedCmd);
+        expect(seedCmd).toBeLessThan(pullCmd);
       });
     });
 
@@ -440,6 +448,13 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
           expectFileExistenceCheck(shell, mapPath);
         }
       });
+
+      it('each WORLD_GRAPH room has a tiled/room-*.tmx source for maps:export', () => {
+        for (const roomId of Object.keys(WORLD_GRAPH)) {
+          const tmxPath = path.join(repoRoot, 'tiled', `${roomId}.tmx`);
+          expect(fs.existsSync(tmxPath), `missing ${tmxPath}`).toBe(true);
+        }
+      });
     });
 
     it('runs Pull Assets and Assert World Graph Maps before Test docker.build --target build', () => {
@@ -455,6 +470,12 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
       const firstMapPath = WORLD_GRAPH_MAP_PATHS[0];
       expect(firstMapPath).toBeDefined();
 
+      const exportCmd = indexOfExecutable(
+        jenkinsExec,
+        /npm\s+run\s+maps:export/,
+        'npm run maps:export',
+      );
+      const seedCmd = indexOfExecutable(jenkinsExec, /npm\s+run\s+assets:push/, 'npm run assets:push');
       const pullCmd = indexOfExecutable(jenkinsExec, /npm\s+run\s+assets:pull/, 'npm run assets:pull');
       const assertCmd = indexOfExecutable(
         jenkinsExec,
@@ -473,6 +494,8 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
         'kubectl set image deploy',
       );
 
+      expect(exportCmd).toBeLessThan(seedCmd);
+      expect(seedCmd).toBeLessThan(pullCmd);
       expect(pullCmd).toBeLessThan(assertCmd);
       expect(assertCmd).toBeLessThan(testImage);
       expect(testImage).toBeLessThan(pushCmd);

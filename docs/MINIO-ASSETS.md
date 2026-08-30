@@ -43,4 +43,4 @@ Unauthenticated `https://minio-adminer.balashov-maxim.ru/` → 401; authenticate
 
 Публичная карта игры: `curl -sfI https://platformer.balashov-maxim.ru/media/assets/maps/level-01.json` → 200. Тело `curl -sf` той же URL — Tiled JSON (`"tilesets"`, `"layers"`), не SPA HTML. HTTP 200 с `Content-Type: text/html` значит, что `/media` попал на frontend, а не в MinIO.
 
-`npm run assets:push` отказывается заливать `maps/*.json` без массивов `tilesets` и `layers` (заглушка `{"width":2,"height":2}` ломает Phaser и Jenkins Verify). CI после pull требует `public/assets/maps/room-a.json`, `room-b.json`, `room-c.json`, `room-d.json`.
+`npm run assets:push` отказывается заливать `maps/*.json` без массивов `tilesets` и `layers` (заглушка `{"width":2,"height":2}` ломает Phaser и Jenkins Verify). CI после `maps:export` + pull требует `public/assets/maps/room-a.json`, `room-b.json`, `room-c.json`, `room-d.json`.

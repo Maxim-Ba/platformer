@@ -16,8 +16,8 @@ pipeline {
       steps {
         // Jenkins-in-Docker has docker but no Node (`npm: not found`).
         // docker.inside bind-mounts $PWD from the *host*. Copy the workspace
-        // into a node container and run `npm run assets:pull` against
-        // minio-adminer HTTPS (same s3manager host as the UI / assets:push).
+        // into a node container and run maps:export → assets:push → assets:pull
+        // against minio-adminer HTTPS (same s3manager host as the UI).
         withCredentials([
           usernamePassword(
             credentialsId: 's3manager-http',
@@ -38,7 +38,10 @@ pipeline {
             docker start "$cid"
             docker exec "$cid" mkdir -p /app
             docker cp "$PWD/." "$cid":/app
-            docker exec -w /app "$cid" sh -c "npm ci && npm run assets:pull"
+            # maps:export writes WORLD_GRAPH JSON from tiled/room-*.tmx (room-d.json is
+            # gitignored). assets:push publishes those maps plus git-tracked blobs, then
+            # assets:pull restores the full bucket so Assert World Graph Maps can pass.
+            docker exec -w /app "$cid" sh -c "npm ci && npm run maps:export && npm run assets:push && npm run assets:pull"
             mkdir -p public/assets
             docker cp "$cid":/app/public/assets/. public/assets/
             test -d public/assets/
@@ -54,10 +57,18 @@ pipeline {
         // Returns: success only if `public/assets/maps/{id}.json` exists for each id;
         //       otherwise fail the pipeline (MUST NOT reach Push/Deploy).
         sh '''
-          test -f public/assets/maps/room-a.json
-          test -f public/assets/maps/room-b.json
-          test -f public/assets/maps/room-c.json
-          test -f public/assets/maps/room-d.json
+          set -eu
+          for path in \
+            public/assets/maps/room-a.json \
+            public/assets/maps/room-b.json \
+            public/assets/maps/room-c.json \
+            public/assets/maps/room-d.json
+          do
+            if ! test -f "$path"; then
+              echo "Assert World Graph Maps: missing ${path} after assets:pull" >&2
+              exit 1
+            fi
+          done
         '''
       }
     }

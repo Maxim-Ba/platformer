@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "validate:maps": "node scripts/validate-maps.mjs",
+    "maps:export": "node scripts/export-world-maps.mjs",
     "assets:push": "node scripts/assets-sync.mjs push",
     "assets:pull": "node scripts/assets-sync.mjs pull"
   },
