@@ -91,6 +91,36 @@ function authorizationHeader(username: string, password: string): string {
   return `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`;
 }
 
+/**
+ * Rejects the assetSync test stub `{"width":2,"height":2}` (and any other JSON
+ * that is not a Tiled export). Uploading that body to `/media/assets/maps/level-01.json`
+ * makes Jenkins Verify pass `curl -sfI` while Phaser cannot build the room.
+ */
+export function assertPublishableRuntimeMap(relativePosix: string, body: Uint8Array): void {
+  if (!relativePosix.startsWith('maps/') || !relativePosix.endsWith('.json')) {
+    return;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    throw new Error(`Refusing to push ${relativePosix}: map JSON is invalid`);
+  }
+
+  if (parsed === null || typeof parsed !== 'object') {
+    throw new Error(`Refusing to push ${relativePosix}: map JSON must be an object`);
+  }
+
+  const record = parsed as { tilesets?: unknown; layers?: unknown };
+  if (!Array.isArray(record.tilesets) || record.tilesets.length === 0) {
+    throw new Error(`Refusing to push ${relativePosix}: not a Tiled map (missing tilesets)`);
+  }
+  if (!Array.isArray(record.layers) || record.layers.length === 0) {
+    throw new Error(`Refusing to push ${relativePosix}: not a Tiled map (missing layers)`);
+  }
+}
+
 function listLocalRuntimeFiles(localAssetsDir: string): { absPath: string; relativePosix: string }[] {
   if (!fs.existsSync(localAssetsDir)) {
     return [];
@@ -382,6 +412,7 @@ export async function pushAssets(options?: AssetSyncOptions): Promise<void> {
   for (const file of files) {
     const objectKey = posixJoin(auth.objectPrefix, file.relativePosix);
     const body = new Uint8Array(fs.readFileSync(file.absPath));
+    assertPublishableRuntimeMap(file.relativePosix, body);
     await upload({
       adminUrl: auth.adminUrl,
       instance: auth.instance,

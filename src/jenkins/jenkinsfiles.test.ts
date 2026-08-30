@@ -518,6 +518,7 @@ describe('Jenkinsfiles (slice A: tasks 2.4, 6.1–6.4)', () => {
       it('fails Verify when /media map body is SPA HTML, not only when status is non-200', () => {
         expect(shell).toMatch(/<!doctype html/);
         expect(shell).toMatch(/["']tilesets["']/);
+        expect(shell).toMatch(/["']layers["']/);
       });
     });
   });

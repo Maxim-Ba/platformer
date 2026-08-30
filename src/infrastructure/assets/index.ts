@@ -7,6 +7,7 @@ export type {
 export {
   DEFAULT_ASSET_MIRROR,
   DEFAULT_S3MANAGER_PUSH,
+  assertPublishableRuntimeMap,
   parseS3managerBucketListing,
   pullAssets,
   pushAssets,

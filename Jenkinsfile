@@ -120,6 +120,7 @@ pipeline {
           body=$(curl -sf "${SITE_URL}/media/assets/maps/level-01.json")
           printf '%s' "$body" | grep -qi '<!doctype html' && exit 1
           printf '%s' "$body" | grep -q '"tilesets"'
+          printf '%s' "$body" | grep -q '"layers"'
         '''
       }
     }

@@ -16,7 +16,15 @@ import {
 
 const MAP_RELATIVE = path.join('maps', 'level-01.json');
 const IMAGE_RELATIVE = path.join('images', 'player-sheet.png');
-const MAP_BODY = '{"width":2,"height":2}\n';
+const MAP_BODY = `${JSON.stringify({
+  width: 2,
+  height: 2,
+  tilewidth: 32,
+  tileheight: 32,
+  layers: [{ name: 'ground', type: 'tilelayer', width: 2, height: 2, data: [0, 0, 0, 0] }],
+  tilesets: [{ firstgid: 1, name: 'platformer', tilewidth: 32, tileheight: 32 }],
+})}\n`;
+const STUB_MAP_BODY = '{"width":2,"height":2}\n';
 const IMAGE_BODY = 'fake-png-bytes';
 
 const originalS3managerUrl = process.env.S3MANAGER_URL;
@@ -263,6 +271,24 @@ describe('pushAssets', () => {
     delete process.env.S3MANAGER_PASSWORD;
 
     await expect(pushAssets({ localAssetsDir, canPrompt: false })).rejects.toThrow(/S3MANAGER_USER/);
+  });
+
+  it('refuses to push map JSON that is not a Tiled export', async () => {
+    const localAssetsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'platformer-push-stub-'));
+    const mapPath = path.join(localAssetsDir, MAP_RELATIVE);
+    fs.mkdirSync(path.dirname(mapPath), { recursive: true });
+    fs.writeFileSync(mapPath, STUB_MAP_BODY);
+
+    await expect(
+      pushAssets({
+        localAssetsDir,
+        username: 'ui-user',
+        password: 'ui-pass',
+        uploadObject: async () => {
+          throw new Error('stub map must not be uploaded');
+        },
+      }),
+    ).rejects.toThrow(/tilesets/);
   });
 });
 

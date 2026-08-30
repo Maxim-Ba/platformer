@@ -16,9 +16,23 @@ for (let y = 0; y < h; y++) {
   }
 }
 
-const tilesets = JSON.parse(
-  fs.readFileSync('public/assets/maps/level-01.json', 'utf8'),
-).tilesets;
+function loadTilesets() {
+  const candidates = ['public/assets/maps/room-a.json', 'public/assets/maps/level-01.json'];
+  for (const candidate of candidates) {
+    if (!fs.existsSync(candidate)) {
+      continue;
+    }
+    const parsed = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+    if (Array.isArray(parsed.tilesets) && parsed.tilesets.length > 0) {
+      return parsed.tilesets;
+    }
+  }
+  throw new Error(
+    'Need a Tiled JSON with tilesets (public/assets/maps/room-a.json or level-01.json)',
+  );
+}
+
+const tilesets = loadTilesets();
 
 function makeMap(decor, objects) {
   return {
